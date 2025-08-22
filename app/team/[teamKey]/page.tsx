@@ -50,18 +50,6 @@ export default function TeamPage() {
     return 'result-tie';
   };
 
-  const testEndpoints = async () => {
-    try {
-      console.log('Testing Yahoo API endpoints...');
-      const response = await fetch(`/api/team/${params.teamKey}/test-endpoints`);
-      const data = await response.json();
-      console.log('Test completed:', data);
-      alert('Endpoint testing completed! Check browser console and debug.log file for results.');
-    } catch (error) {
-      console.error('Error testing endpoints:', error);
-      alert('Error testing endpoints. Check console for details.');
-    }
-  };
 
   if (loading) {
     return (
@@ -92,108 +80,124 @@ export default function TeamPage() {
             <span>Manager: {team?.managers?.[0]?.nickname}</span>
             <span>Moves: {team?.number_of_moves}</span>
             <span>Trades: {team?.number_of_trades}</span>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button 
-                onClick={() => testEndpoints()}
-                style={{
-                  padding: '4px 8px',
-                  fontSize: '12px',
-                  background: '#ff9800',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
-              >
-                Test API Endpoints
-              </button>
-              <button 
-                onClick={() => router.push('/debug')}
-                style={{
-                  padding: '4px 8px',
-                  fontSize: '12px',
-                  background: '#9c27b0',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
-              >
-                🔧 Debug Tool
-              </button>
-            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-3" style={{ alignItems: 'start' }}>
-          <div style={{ gridColumn: 'span 2' }}>
+        <div className="grid grid-cols-4" style={{ alignItems: 'start' }}>
+          <div style={{ gridColumn: 'span 3' }}>
             <div className="card">
               <div className="card-header">
-                <h2>Roster</h2>
+                <h2>Today's Roster</h2>
               </div>
               <div className="card-body">
-                {['C', '1B', '2B', '3B', 'SS', 'OF', 'Util', 'SP', 'RP', 'P', 'BN', 'IL'].map(position => {
-                  const players = roster.filter(p => p.selected_position === position);
-                  if (players.length === 0) return null;
-                  
-                  return (
-                    <div key={position} className="roster-section">
-                      <h3 className="roster-position">{position}</h3>
-                      {players.map(player => (
-                        <div key={player.player_key} className="player-card">
-                          <div className="player-info">
-                            <div className="player-name">{player.name}</div>
-                            <div className="player-team">
-                              {player.editorial_team_abbr} - {player.display_position}
+                <div className="roster-grid">
+                  {roster.map(player => (
+                    <div key={player.player_key} className="player-card">
+                      <div className="player-card-header">
+                        <div className="position-badge">{player.selected_position}</div>
+                        {player.is_undroppable && (
+                          <span className="lock-badge">🔒</span>
+                        )}
+                      </div>
+                      
+                      <div className="player-card-content">
+                        <div className="player-image-section">
+                          {player.headshot ? (
+                            <img 
+                              src={player.headshot} 
+                              alt={player.name}
+                              className="player-image"
+                            />
+                          ) : (
+                            <div className="player-image-placeholder">
+                              {player.name?.charAt(0) || '?'}
                             </div>
-                          </div>
-                          <div className="player-stats">
-                            {player.total_points !== undefined && player.total_points !== null ? (
-                              <div className="fantasy-points">
-                                <strong>{player.total_points.toFixed(1)} pts</strong>
-                                {player.week_points !== undefined && (
-                                  <div className="week-points">
-                                    <small>Week {player.week}: {player.week_points.toFixed(1)}</small>
-                                  </div>
-                                )}
-                              </div>
-                            ) : (
-                              <div className="player-status">
-                                <span className="position-badge">{player.display_position}</span>
-                                <span className="team-badge">{player.editorial_team_abbr}</span>
-                              </div>
-                            )}
-                            
-                            {/* Show actual stats if available */}
-                            {(player.home_runs || player.wins || player.batting_average) && (
-                              <div className="traditional-stats">
-                                {player.position_type === 'B' ? (
-                                  <small>
-                                    AVG: {player.batting_average?.toFixed(3) || '.000'} | 
-                                    HR: {player.home_runs || 0} | 
-                                    RBI: {player.rbis || 0}
-                                  </small>
-                                ) : (
-                                  <small>
-                                    W: {player.wins || 0} | 
-                                    ERA: {player.era?.toFixed(2) || '0.00'} | 
-                                    K: {player.strikeouts || 0}
-                                  </small>
-                                )}
-                              </div>
-                            )}
-                            
-                            {player.is_undroppable && (
-                              <div className="undroppable-badge">
-                                <small>🔒 Can't Drop</small>
-                              </div>
-                            )}
+                          )}
+                        </div>
+                        
+                        <div className="player-info">
+                          <div className="player-name">{player.name}</div>
+                          <div className="player-team">
+                            {player.editorial_team_abbr} - {player.display_position}
+                            {player.uniform_number && ` #${player.uniform_number}`}
                           </div>
                         </div>
-                      ))}
+                        
+                        <div className="player-stats">
+                          {player.position_type === 'B' ? (
+                            <div className="stats-grid">
+                              <div className="stat-item">
+                                <span className="stat-label">H-AB</span>
+                                <span className="stat-value">{player.hits || 0}-{player.allStats?.AB?.value || 0}</span>
+                              </div>
+                              <div className="stat-item">
+                                <span className="stat-label">R</span>
+                                <span className="stat-value">{player.runs || 0}</span>
+                              </div>
+                              <div className="stat-item">
+                                <span className="stat-label">RBI</span>
+                                <span className="stat-value">{player.rbis || 0}</span>
+                              </div>
+                              <div className="stat-item">
+                                <span className="stat-label">HR</span>
+                                <span className="stat-value">{player.home_runs || 0}</span>
+                              </div>
+                              <div className="stat-item">
+                                <span className="stat-label">SB</span>
+                                <span className="stat-value">{player.stolen_bases || 0}</span>
+                              </div>
+                              <div className="stat-item">
+                                <span className="stat-label">AVG</span>
+                                <span className="stat-value">
+                                  {typeof player.batting_average === 'number' ? player.batting_average.toFixed(3) : '.000'}
+                                </span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="stats-grid">
+                              <div className="stat-item">
+                                <span className="stat-label">IP</span>
+                                <span className="stat-value">
+                                  {typeof player.innings_pitched === 'number' ? player.innings_pitched.toFixed(1) : '0.0'}
+                                </span>
+                              </div>
+                              <div className="stat-item">
+                                <span className="stat-label">W-L</span>
+                                <span className="stat-value">{player.wins || 0}-{player.losses || 0}</span>
+                              </div>
+                              <div className="stat-item">
+                                <span className="stat-label">ERA</span>
+                                <span className="stat-value">
+                                  {typeof player.era === 'number' ? player.era.toFixed(2) : '0.00'}
+                                </span>
+                              </div>
+                              <div className="stat-item">
+                                <span className="stat-label">K</span>
+                                <span className="stat-value">{player.strikeouts_pitcher || 0}</span>
+                              </div>
+                              <div className="stat-item">
+                                <span className="stat-label">SV</span>
+                                <span className="stat-value">{player.saves || 0}</span>
+                              </div>
+                              <div className="stat-item">
+                                <span className="stat-label">WHIP</span>
+                                <span className="stat-value">
+                                  {typeof player.whip === 'number' ? player.whip.toFixed(2) : '0.00'}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {player.total_points !== undefined && player.total_points !== null && (
+                          <div className="player-points">
+                            <strong>{player.total_points.toFixed(1)}</strong> pts
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
             </div>
           </div>

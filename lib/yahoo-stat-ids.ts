@@ -29,6 +29,8 @@ export const YAHOO_BASEBALL_STATS: { [key: string]: { name: string; category: st
   "23": { name: "Total Bases", category: "batting", description: "TB" },
 
   // Pitching Stats
+  "24": { name: "Earned Runs", category: "pitching", description: "ER" },
+  "25": { name: "Hits Allowed", category: "pitching", description: "HA" },
   "26": { name: "Wins", category: "pitching", description: "W" },
   "27": { name: "Losses", category: "pitching", description: "L" },
   "28": { name: "ERA", category: "pitching", description: "ERA" },
@@ -41,6 +43,8 @@ export const YAHOO_BASEBALL_STATS: { [key: string]: { name: string; category: st
   "35": { name: "Blown Saves", category: "pitching", description: "BS" },
   "42": { name: "Strikeouts", category: "pitching", description: "K" },
   "50": { name: "Innings Pitched", category: "pitching", description: "IP" },
+  // The pitching stats Yahoo actually returns in daily/weekly views
+  "83": { name: "Earned Runs", category: "pitching", description: "ER" },
   "85": { name: "ERA", category: "pitching", description: "ERA" },
   "89": { name: "WHIP", category: "pitching", description: "WHIP" },
 
@@ -79,10 +83,30 @@ export function decodeYahooStats(stats: any[]): { [key: string]: any } {
     if (statInfo) {
       // Convert to appropriate type
       let parsedValue: any = value;
-      if (statInfo.category === 'batting' && (statInfo.description === 'AVG' || statInfo.description === 'OBP' || statInfo.description === 'SLG' || statInfo.description === 'OPS' || statInfo.description === 'FPCT')) {
+      
+      // Handle special cases
+      if (statId === '60' && value && value.includes('/')) {
+        // H/AB format - parse hits and at bats
+        const [hits, atBats] = value.split('/');
+        decoded['H'] = {
+          value: hits === '-' ? 0 : parseInt(hits),
+          name: 'Hits',
+          category: 'batting',
+          raw_stat_id: statId
+        };
+        decoded['AB'] = {
+          value: atBats === '-' ? 0 : parseInt(atBats),
+          name: 'At Bats',
+          category: 'batting',
+          raw_stat_id: statId
+        };
+        continue;
+      } else if (statInfo.category === 'batting' && (statInfo.description === 'AVG' || statInfo.description === 'OBP' || statInfo.description === 'SLG' || statInfo.description === 'OPS' || statInfo.description === 'FPCT')) {
         parsedValue = parseFloat(value || '0');
       } else if (!isNaN(value) && value !== '-') {
         parsedValue = parseInt(value) || parseFloat(value);
+      } else if (value === '-') {
+        parsedValue = 0;
       }
       
       decoded[statInfo.description || statInfo.name] = {
@@ -106,29 +130,33 @@ export function decodeYahooStats(stats: any[]): { [key: string]: any } {
 }
 
 export function getKeyStats(decodedStats: any): any {
+  // Calculate batting average from hits and at-bats
+  const hits = decodedStats.H?.value || 0;
+  const atBats = decodedStats.AB?.value || 0;
+  const calculatedAvg = atBats > 0 ? hits / atBats : 0;
+  
   // Extract the most important fantasy stats
   return {
-    // Batting
-    batting_average: decodedStats.AVG?.value,
-    home_runs: decodedStats.HR?.value,
-    rbis: decodedStats.RBI?.value,
-    runs: decodedStats.R?.value,
-    stolen_bases: decodedStats.SB?.value,
-    hits: decodedStats.H?.value,
-    walks: decodedStats.BB?.value,
-    strikeouts_batter: decodedStats.K?.value,
-    obp: decodedStats.OBP?.value,
-    slg: decodedStats.SLG?.value,
-    ops: decodedStats.OPS?.value,
+    // Batting - simplified to essential stats
+    hits: hits,
+    runs: decodedStats.R?.value || 0,
+    rbis: decodedStats.RBI?.value || 0,
+    home_runs: decodedStats.HR?.value || 0,
+    batting_average: decodedStats.AVG?.value || calculatedAvg,
+    stolen_bases: decodedStats.SB?.value || 0,
     
-    // Pitching
-    wins: decodedStats.W?.value,
-    losses: decodedStats.L?.value,
-    era: decodedStats.ERA?.value,
-    saves: decodedStats.SV?.value,
-    holds: decodedStats.HLD?.value,
-    strikeouts_pitcher: decodedStats.K?.value,
-    innings_pitched: decodedStats.IP?.value,
-    whip: decodedStats.WHIP?.value,
+    // Pitching - simplified to essential stats  
+    innings_pitched: decodedStats.IP?.value || 0,
+    hits_allowed: decodedStats.HA?.value || 0,  // For pitchers, this is hits allowed
+    earned_runs: decodedStats.ER?.value || 0,
+    wins: decodedStats.W?.value || 0,
+    losses: decodedStats.L?.value || 0,
+    era: decodedStats.ERA?.value || 0,
+    saves: decodedStats.SV?.value || 0,
+    strikeouts_pitcher: decodedStats.K?.value || 0,
+    whip: decodedStats.WHIP?.value || 0,
+    
+    // Keep all decoded stats for reference
+    allStats: decodedStats,
   };
 }

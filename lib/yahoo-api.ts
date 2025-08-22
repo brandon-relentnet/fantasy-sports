@@ -125,8 +125,9 @@ export class YahooFantasyAPI {
   }
 
   async getRoster(teamKey: string) {
-    // Use the roster players subresource to get stats!
-    const data = await this.makeRequest(`/team/${teamKey}/roster/players/stats`);
+    // Get roster with today's stats
+    const endpoint = `/team/${teamKey}/roster/players/stats`;
+    const data = await this.makeRequest(endpoint);
     logToFile('Raw Roster with Players Stats XML Structure', data);
     
     const roster = [];
