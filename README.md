@@ -45,7 +45,12 @@ Start backend and frontend in parallel:
 npm run dev:all
 ```
 
-Frontend runs at http://localhost:3000 and calls backend at http://localhost:4000.
+Frontend runs at https://localhost:3000 and calls backend at http://localhost:4000.
+If you see CORS errors, set CORS_ORIGINS in env (comma-separated), e.g.:
+
+```
+CORS_ORIGINS=https://localhost:3000,http://localhost:3000
+```
 
 ## Features
 

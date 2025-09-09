@@ -8,8 +8,15 @@ const cors_1 = __importDefault(require("cors"));
 const yahooApi_1 = require("./lib/yahooApi");
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 4000;
-const ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:3000';
-app.use((0, cors_1.default)({ origin: ORIGIN, credentials: false }));
+// For development/testing: allow all origins. Switch to an allowlist for production.
+app.use((0, cors_1.default)({
+    origin: true,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    optionsSuccessStatus: 204,
+    preflightContinue: false,
+    credentials: false,
+}));
 app.use(express_1.default.json());
 function getToken(req) {
     const auth = req.headers['authorization'];

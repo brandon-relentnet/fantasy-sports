@@ -4,9 +4,15 @@ import { YahooFantasyAPI } from './lib/yahooApi';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
-const ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:3000';
-
-app.use(cors({ origin: ORIGIN, credentials: false }));
+// For development/testing: allow all origins. Switch to an allowlist for production.
+app.use(cors({
+  origin: true,
+  methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 204,
+  preflightContinue: false,
+  credentials: false,
+}));
 app.use(express.json());
 
 function getToken(req: Request): string | null {
