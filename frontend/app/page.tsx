@@ -12,8 +12,7 @@ export default function Home() {
   const [teams, setTeams] = useState<TeamSummary[]>([]);
   const [roster, setRoster] = useState<any[]>([]);
   const [typeFilter, setTypeFilter] = useState<'all' | 'batters' | 'pitchers'>('all');
-  const [showBench, setShowBench] = useState(true);
-  const [showIL, setShowIL] = useState(true);
+  const [showExtras, setShowExtras] = useState(true); // Bench and IL together
   const [selectedLeague, setSelectedLeague] = useState<string>('');
   const [selectedTeam, setSelectedTeam] = useState<string>('');
   const [dateMode, setDateMode] = useState<'today' | 'date'>('today');
@@ -161,11 +160,32 @@ export default function Home() {
 
           {dateMode === 'date' && (
             <div className="flex items-center gap-3">
-              <div className="flex flex-col gap-1">
-                <button type="button" aria-label="Next day" onClick={() => shiftDate(1)} className="px-2 py-1 rounded-md bg-zinc-800 hover:bg-zinc-700 border border-zinc-700" title="Next day">↑</button>
-                <button type="button" aria-label="Previous day" onClick={() => shiftDate(-1)} className="px-2 py-1 rounded-md bg-zinc-800 hover:bg-zinc-700 border border-zinc-700" title="Previous day">↓</button>
+              <div className="inline-flex items-stretch border border-zinc-700 rounded-md overflow-hidden bg-zinc-900">
+                <button
+                  type="button"
+                  aria-label="Next day"
+                  onClick={() => shiftDate(1)}
+                  title="Next day"
+                  className="px-2 text-zinc-200 hover:bg-zinc-800"
+                >
+                  ↑
+                </button>
+                <input
+                  type="date"
+                  className="px-3 py-1.5 bg-transparent text-zinc-100 focus:outline-none border-0"
+                  value={date}
+                  onChange={(e) => { setDate(e.target.value); if (selectedTeam) setTimeout(() => { refreshRoster(); }, 0); }}
+                />
+                <button
+                  type="button"
+                  aria-label="Previous day"
+                  onClick={() => shiftDate(-1)}
+                  title="Previous day"
+                  className="px-2 text-zinc-200 hover:bg-zinc-800"
+                >
+                  ↓
+                </button>
               </div>
-              <input type="date" className="px-3 py-1.5 rounded-md bg-zinc-900 border border-zinc-700 text-zinc-100" value={date} onChange={(e) => { setDate(e.target.value); if (selectedTeam) setTimeout(() => { refreshRoster(); }, 0); }} />
               <button type="button" onClick={setToday} className="px-3 py-1.5 rounded-md bg-zinc-800 hover:bg-zinc-700 border border-zinc-700">Today</button>
             </div>
           )}
@@ -198,17 +218,11 @@ export default function Home() {
             </button>
           </div>
 
-          {/* Show/hide toggles */}
-          <div className="flex items-center gap-3 text-sm">
-            <label className="inline-flex items-center gap-2 text-zinc-300">
-              <input type="checkbox" className="accent-violet-600" checked={showBench} onChange={(e) => setShowBench(e.target.checked)} />
-              Show Bench
-            </label>
-            <label className="inline-flex items-center gap-2 text-zinc-300">
-              <input type="checkbox" className="accent-violet-600" checked={showIL} onChange={(e) => setShowIL(e.target.checked)} />
-              Show IL
-            </label>
-          </div>
+          {/* Show/hide extras */}
+          <label className="inline-flex items-center gap-2 text-sm text-zinc-300">
+            <input type="checkbox" className="accent-violet-600" checked={showExtras} onChange={(e) => setShowExtras(e.target.checked)} />
+            Show Bench & IL
+          </label>
 
           <button onClick={refreshRoster} className="ml-auto px-3 py-1.5 rounded-md bg-violet-600 hover:bg-violet-500 text-white disabled:opacity-50" disabled={!selectedTeam || (dateMode==='date' && !date)}>Apply</button>
         </div>
@@ -319,8 +333,7 @@ export default function Home() {
                     const selPos = (p.selectedPosition || '').toUpperCase();
                     const isBench = selPos === 'BN';
                     const isIL = selPos === 'IL' || selPos === 'DL' || (Array.isArray(p.eligiblePositions) && p.eligiblePositions.includes('IL'));
-                    if (!showBench && isBench) return false;
-                    if (!showIL && isIL) return false;
+                    if (!showExtras && (isBench || isIL)) return false;
                     const type = (p.positionType || '').toUpperCase();
                     if (typeFilter === 'batters' && type === 'P') return false;
                     if (typeFilter === 'pitchers' && type === 'B') return false;
