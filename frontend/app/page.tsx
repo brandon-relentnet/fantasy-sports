@@ -11,6 +11,9 @@ export default function Home() {
   const [leagues, setLeagues] = useState<League[]>([]);
   const [teams, setTeams] = useState<TeamSummary[]>([]);
   const [roster, setRoster] = useState<any[]>([]);
+  const [hideBench, setHideBench] = useState(false);
+  const [hideBatters, setHideBatters] = useState(false);
+  const [hidePitchers, setHidePitchers] = useState(false);
   const [selectedLeague, setSelectedLeague] = useState<string>('');
   const [selectedTeam, setSelectedTeam] = useState<string>('');
   const [dateMode, setDateMode] = useState<'today' | 'date'>('today');
@@ -249,6 +252,22 @@ export default function Home() {
               <h3 className="text-lg font-semibold">Roster</h3>
               <span className="text-xs text-zinc-400">{selectedTeam}</span>
             </div>
+            {/* Filters */}
+            <div className="mb-3 flex flex-wrap items-center gap-3 text-sm">
+              <div className="flex items-center gap-2">
+                <input id="hideBench" type="checkbox" className="accent-violet-600" checked={hideBench} onChange={(e) => setHideBench(e.target.checked)} />
+                <label htmlFor="hideBench" className="text-zinc-300 select-none">Hide bench</label>
+              </div>
+              <div className="flex items-center gap-2">
+                <input id="hideBatters" type="checkbox" className="accent-violet-600" checked={hideBatters} onChange={(e) => setHideBatters(e.target.checked)} />
+                <label htmlFor="hideBatters" className="text-zinc-300 select-none">Hide batters</label>
+              </div>
+              <div className="flex items-center gap-2">
+                <input id="hidePitchers" type="checkbox" className="accent-violet-600" checked={hidePitchers} onChange={(e) => setHidePitchers(e.target.checked)} />
+                <label htmlFor="hidePitchers" className="text-zinc-300 select-none">Hide pitchers</label>
+              </div>
+            </div>
+
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
                 <thead className="text-zinc-300">
@@ -272,7 +291,14 @@ export default function Home() {
                   </tr>
                 </thead>
                 <tbody>
-                  {roster.map((p: any) => (
+                  {(roster.filter((p: any) => {
+                    const isBench = (p.selectedPosition || '').toUpperCase() === 'BN';
+                    if (hideBench && isBench) return false;
+                    const type = (p.positionType || '').toUpperCase();
+                    if (hideBatters && type === 'B') return false;
+                    if (hidePitchers && type === 'P') return false;
+                    return true;
+                  })).map((p: any) => (
                     <tr key={p.key} className="border-b border-zinc-800 hover:bg-zinc-800/50">
                       <td className="px-2 py-2 text-zinc-300">{p.selectedPosition || p.position || '-'}</td>
                       <td className="px-2 py-2">
