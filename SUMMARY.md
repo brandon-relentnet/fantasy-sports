@@ -1,7 +1,7 @@
 # Product and Architecture Summary
 
 ## Overview
-- Purpose: Provide Yahoo Fantasy Baseball managers a faster, cleaner way to view leagues, standings, team rosters, weekly stats, and matchups after authenticating with Yahoo.
+- Purpose: Provide Yahoo Fantasy Baseball managers a faster, cleaner way to view leagues, standings, team rosters, date-based stats, and matchups after authenticating with Yahoo.
 - Audience: Yahoo fantasy players who want consolidated read-only insights without navigating multiple Yahoo pages.
 - Value: Streamlined navigation, focused data views, and predictable URLs for quick drill‑downs.
 
@@ -19,9 +19,10 @@
 ## Architecture
 - Framework: Next.js 15 (App Router) + TypeScript; React 19.
 - Auth: NextAuth at `app/api/auth/[...nextauth]/route.ts`.
-- API routes: Server endpoints that proxy/shape Yahoo responses, e.g. `app/api/league/[leagueKey]/route.ts`, `app/api/team/[teamKey]/...` including `current-matchup`, `matchups`, `roster` (supports `?date=YYYY-MM-DD`), and `roster/stats`. The old `roster/weekly` endpoint is deprecated and returns 410.
+- API routes: Server endpoints that proxy/shape Yahoo responses, e.g. `app/api/league/[leagueKey]/route.ts`, `app/api/team/[teamKey]/...` including `current-matchup`, `matchups`, `roster` (supports `?date=YYYY-MM-DD`), and `roster/stats`. The old `roster/weekly` endpoint is deprecated and returns 410. API handlers use `lib/apiRoute.ts` to retrieve access tokens.
 - UI pages: `app/league/[leagueKey]/page.tsx`, `app/team/[teamKey]/page.tsx`, root `app/page.tsx` and shared `app/layout.tsx`, `app/providers.tsx`.
-- Utilities: `lib/yahoo-api.ts` (Axios + xml2js), `lib/auth.ts`, `lib/logger.ts`.
+- Utilities: `lib/yahoo-api.ts` (Axios + xml2js), `lib/yahoo-stat-ids.ts` (stat decoding), `lib/apiRoute.ts` (access token helper), `lib/auth.ts`, `lib/logger.ts`.
+- Types: `types/player.ts` defines normalized player fields including `hits` and `ops`.
 - HTTPS dev: `server.js` starts an HTTPS Next server using `certificates/localhost.crt|.key` and clears `debug.log` on boot.
 
 ## Data Sources
@@ -59,6 +60,11 @@
   - `curl -b cookie.txt -c cookie.txt 'http://localhost:3000/api/team/<teamKey>/roster?date=2025-09-09'`
   - `curl -b cookie.txt -c cookie.txt 'http://localhost:3000/api/team/<teamKey>/roster/stats'`
 
+Debugging
+- Log a specific player’s decoded stats for a date (dev only):
+  - `curl -b cookie.txt -c cookie.txt 'http://localhost:3000/api/team/<teamKey>/roster?date=2025-09-09&debug=<playerKey>'`
+  - Check `debug.log` for entries labeled `DEBUG Player Decoded Stats`.
+
 Notes
 - Authenticate in the browser first so cookies/session are created; then reuse them with `-b/-c`.
 - Replace `<leagueKey>` and `<teamKey>` with your Yahoo keys from the UI.
@@ -81,4 +87,4 @@ Render React UI
 Simplification levers
 - Keep API routes thin: delegate mapping/parsing to `lib/yahoo-api.ts`.
 - Coalesce related endpoints where possible to reduce round trips.
-- Centralize stat-ID mapping in `lib/yahoo-stat-ids.ts`; avoid duplicating logic in pages.
+- Centralize stat-ID mapping in `lib/yahoo-stat-ids.ts`; avoid duplicating logic in pages. Use `lib/apiRoute.ts` to centralize token retrieval.

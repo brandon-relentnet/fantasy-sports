@@ -2,8 +2,8 @@
 
 ## Project Structure & Module Organization
 - App code in `app/` (Next.js App Router). Pages: `app/page.tsx`, layouts and providers; API routes under `app/api/` (e.g., `app/api/league/[leagueKey]/route.ts`, `app/api/team/[teamKey]/...`).
-- Shared utilities in `lib/` (e.g., `lib/yahoo-api.ts`, `lib/auth.ts`, `lib/logger.ts`).
-- Type declarations in `types/` (e.g., `types/next-auth.d.ts`).
+- Shared utilities in `lib/` (e.g., `lib/yahoo-api.ts`, `lib/yahoo-stat-ids.ts`, `lib/auth.ts`, `lib/apiRoute.ts`, `lib/logger.ts`).
+- Type declarations in `types/` (e.g., `types/next-auth.d.ts`, `types/player.ts`).
 - Config: `next.config.js`, `tsconfig.json`, `next-env.d.ts`.
 - Local HTTPS dev helper: `server.js` with certs in `certificates/`.
 
@@ -19,17 +19,21 @@ Environment: copy `.env.local` from README. Required keys: `NEXTAUTH_URL`, `NEXT
 ## Coding Style & Naming Conventions
 - Language: TypeScript, React 19, Next.js 15 (App Router).
 - Indentation: 2 spaces; prefer named exports. File names: camelCase for utilities (`yahooApi`), kebab-case for folders; Next.js route files as `route.ts`.
-- API route params use bracketed folders (e.g., `app/api/team/[teamKey]/route.ts`). Do not type `params` as a Promise in App Router handlers.
+- API route params use bracketed folders (e.g., `app/api/team/[teamKey]/route.ts`). Do not type `params` as a Promise in App Router handlers. Use `getAccessTokenOrUnauthorized()` from `lib/apiRoute.ts` in API routes to fetch the access token or return 401.
 - Use `lib/logger.ts` for server-side logs; avoid console noise in production paths.
 - Run `npm run lint` before submitting; fix autofixable issues.
 
 ## Testing Guidelines
 - No formal test suite present. Add lightweight tests colocated under `__tests__/` or `*.test.ts` when introducing complex logic (e.g., parsing, mappers).
 - Prefer dependency-free assertions (Node test runner) or add Jest only if required by scope.
-- For API routes, validate with curl/httpie examples and edge cases (missing params, auth states). Prefer date-based team roster filters over weekly.
+- For API routes, validate with curl/httpie examples and edge cases (missing params, auth states). Prefer date-based team roster filters over weekly. The weekly roster endpoint is deprecated and returns 410.
+
+## Debugging Tips
+- Roster endpoint supports `?debug=<playerKey>` to log a specific player's decoded stat map to `debug.log` during development:
+- Example: `/api/team/<teamKey>/roster?date=YYYY-MM-DD&debug=<playerKey>`
 
 ## Commit & Pull Request Guidelines
-- Commits: concise, present tense. Prefix by scope when helpful: `app:`, `lib:`, `api:`, `types:`, `build:`, `docs:` (e.g., `api: add weekly roster endpoint`).
+- Commits: concise, present tense. Prefix by scope when helpful: `app:`, `lib:`, `api:`, `types:`, `build:`, `docs:` (e.g., `api: add date-based roster filter`).
 - One logical change per commit; include rationale if behavior changes.
 - PRs: include description, screenshots of UI changes, reproduction steps, and links to issues. Note any env or migration changes.
 
