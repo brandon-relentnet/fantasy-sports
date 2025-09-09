@@ -4,10 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "concurrently -n backend,frontend -c yellow,cyan \"npm:dev:backend\" \"npm:dev:frontend\"",
+    "dev": "make dev",
     "dev:https": "node server.js",
     "dev:backend": "npm --prefix backend run dev",
-    "dev:frontend": "next dev",
+    "dev:frontend": "node server.js",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -28,7 +28,6 @@
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "tailwindcss": "^4.1.13",
-    "concurrently": "^9.1.2",
     "typescript": "^5.9.2",
     "xml2js": "^0.6.2"
   },
