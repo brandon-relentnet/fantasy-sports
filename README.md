@@ -17,13 +17,14 @@ A Next.js application that allows users to login with their Yahoo Fantasy Sports
 
 ### 2. Configure Environment Variables
 
-Update the `.env.local` file with your Yahoo app credentials:
+Copy `frontend/.env.local.example` to `frontend/.env.local` and fill values:
 
 ```env
-NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_URL=https://localhost:3000
 NEXTAUTH_SECRET=generate-a-random-secret-key-here
 YAHOO_CLIENT_ID=your-yahoo-client-id
 YAHOO_CLIENT_SECRET=your-yahoo-client-secret
+NEXT_PUBLIC_API_BASE=http://localhost:4000
 ```
 
 To generate a secure `NEXTAUTH_SECRET`, run:
@@ -34,7 +35,7 @@ openssl rand -base64 32
 ### 3. Install Dependencies
 
 ```bash
-npm install
+make install
 ```
 
 ### 4. Run the Application (frontend + backend)
@@ -42,10 +43,10 @@ npm install
 Start backend and frontend in parallel:
 
 ```bash
-npm run dev:all
+npm run dev
 ```
 
-Frontend runs at https://localhost:3000 and calls backend at http://localhost:4000.
+Frontend runs at https://localhost:3000 (from frontend/server.js) and calls backend at http://localhost:4000.
 If you see CORS errors, set CORS_ORIGINS in env (comma-separated), e.g.:
 
 ```
@@ -64,21 +65,16 @@ CORS_ORIGINS=https://localhost:3000,http://localhost:3000
 ## Project Structure
 
 ```
-├── app/
-│   ├── api/
-│   │   ├── auth/[...nextauth]/  # NextAuth configuration
-│   │   ├── leagues/              # League data endpoints
-│   │   ├── league/[leagueKey]/   # Specific league endpoints
-│   │   └── team/[teamKey]/       # Team-specific endpoints
-│   ├── league/[leagueKey]/       # League detail page
-│   ├── team/[teamKey]/           # Team detail page
-│   ├── layout.tsx                # Root layout
-│   ├── page.tsx                  # Home page
-│   └── providers.tsx             # Session provider
-├── lib/
-│   └── yahoo-api.ts              # Yahoo Fantasy API client
-└── types/
-    └── next-auth.d.ts            # TypeScript declarations
+├── backend/                      # Express backend
+│   └── src/
+│       ├── lib/                  # Yahoo API client + mappers
+│       └── server.ts             # Express server
+├── frontend/                     # Next.js frontend (App Router)
+│   ├── app/                      # Pages, layout, providers
+│   ├── server.js                 # HTTPS Next dev server
+│   └── tailwind.config.js        # Tailwind config
+├── certificates/                 # Local HTTPS dev certs
+└── shared/                       # Shared types
 ```
 
 ## API Integration

@@ -4,9 +4,7 @@ module.exports = {
     './app/**/*.{ts,tsx}',
     './lib/**/*.{ts,tsx}',
   ],
-  theme: {
-    extend: {},
-  },
+  theme: { extend: {} },
   plugins: [],
 };
 

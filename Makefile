@@ -1,5 +1,6 @@
 BACKEND_DIR=backend
-FRONTEND_HTTPS_CMD=node server.js
+FRONTEND_DIR=frontend
+FRONTEND_HTTPS_CMD=cd $(FRONTEND_DIR) && node server.js
 
 .PHONY: dev backend frontend backend-build backend-start backend-watch install
 
@@ -11,9 +12,10 @@ install:
 	@echo "Installing frontend and backend dependencies";
 	npm install;
 	cd $(BACKEND_DIR) && npm install
+	cd $(FRONTEND_DIR) && npm install || true
 
 backend:
-	cd $(BACKEND_DIR) && npm run start
+    cd $(BACKEND_DIR) && npm run start
 
 frontend:
 	$(FRONTEND_HTTPS_CMD)

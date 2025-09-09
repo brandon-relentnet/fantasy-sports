@@ -8,16 +8,16 @@ const dev = process.env.NODE_ENV !== 'production';
 const hostname = 'localhost';
 const port = 3000;
 
-const app = next({ dev, hostname, port });
+const app = next({ dev, hostname, port, dir: __dirname });
 const handle = app.getRequestHandler();
 
 const httpsOptions = {
-  key: fs.readFileSync('./certificates/localhost.key'),
-  cert: fs.readFileSync('./certificates/localhost.crt'),
+  key: fs.readFileSync(path.join(__dirname, '../certificates/localhost.key')),
+  cert: fs.readFileSync(path.join(__dirname, '../certificates/localhost.crt')),
 };
 
 // Clear debug log file on server start
-const logFile = path.join(__dirname, 'debug.log');
+const logFile = path.join(process.cwd(), 'debug.log');
 try {
   fs.writeFileSync(logFile, `=== Yahoo Fantasy API Debug Log ===\nCleared at: ${new Date().toISOString()}\n`);
   console.log('Debug log file cleared');
@@ -44,3 +44,4 @@ app.prepare().then(() => {
       console.log(`> Ready on https://${hostname}:${port}`);
     });
 });
+

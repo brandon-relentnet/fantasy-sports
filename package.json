@@ -7,7 +7,7 @@
     "dev": "make dev",
     "dev:https": "node server.js",
     "dev:backend": "npm --prefix backend run dev",
-    "dev:frontend": "node server.js",
+    "dev:frontend": "cd frontend && node server.js",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
