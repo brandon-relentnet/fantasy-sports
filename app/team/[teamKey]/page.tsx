@@ -13,6 +13,8 @@ export default function TeamPage() {
   const [matchups, setMatchups] = useState<any[]>([]);
   const [currentMatchup, setCurrentMatchup] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<'today' | 'date'>('today');
+  const [date, setDate] = useState<string>('');
 
   useEffect(() => {
     if (session?.accessToken && params.teamKey) {
@@ -22,9 +24,12 @@ export default function TeamPage() {
 
   const fetchTeamData = async () => {
     try {
+      const rosterUrl = viewMode === 'date' && date
+        ? `/api/team/${params.teamKey}/roster?date=${encodeURIComponent(date)}`
+        : `/api/team/${params.teamKey}/roster`;
       const [teamRes, rosterRes, matchupsRes, currentMatchupRes] = await Promise.all([
         fetch(`/api/team/${params.teamKey}`),
-        fetch(`/api/team/${params.teamKey}/roster`),
+        fetch(rosterUrl),
         fetch(`/api/team/${params.teamKey}/matchups`),
         fetch(`/api/team/${params.teamKey}/current-matchup`),
       ]);
@@ -70,6 +75,21 @@ export default function TeamPage() {
           >
             ← Back
           </button>
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <label>Stats:</label>
+            <select value={viewMode} onChange={(e) => setViewMode(e.target.value as any)}>
+              <option value="today">Today</option>
+              <option value="date">Date...</option>
+            </select>
+            {viewMode === 'date' && (
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+              />
+            )}
+            <button onClick={fetchTeamData}>Apply</button>
+          </div>
         </div>
       </nav>
 
@@ -87,14 +107,16 @@ export default function TeamPage() {
           <div style={{ gridColumn: 'span 3' }}>
             <div className="card">
               <div className="card-header">
-                <h2>Today's Roster</h2>
+                <h2>
+                  Roster{viewMode === 'date' && date ? ` — ${date}` : viewMode === 'today' ? " — Today" : ''}
+                </h2>
               </div>
               <div className="card-body">
                 <div className="roster-grid">
-                  {roster.map(player => (
-                    <div key={player.player_key} className="player-card">
+                  {roster.map((player: any) => (
+                    <div key={player.key} className="player-card">
                       <div className="player-card-header">
-                        <div className="position-badge">{player.selected_position}</div>
+                        <div className="position-badge">{player.selectedPosition}</div>
                         {player.is_undroppable && (
                           <span className="lock-badge">🔒</span>
                         )}
@@ -118,13 +140,13 @@ export default function TeamPage() {
                         <div className="player-info">
                           <div className="player-name">{player.name}</div>
                           <div className="player-team">
-                            {player.editorial_team_abbr} - {player.display_position}
-                            {player.uniform_number && ` #${player.uniform_number}`}
+                            {player.teamAbbr} - {player.position}
+                            {player.uniformNumber && ` #${player.uniformNumber}`}
                           </div>
                         </div>
                         
                         <div className="player-stats">
-                          {player.position_type === 'B' ? (
+                          {player.positionType === 'B' ? (
                             <div className="stats-grid">
                               <div className="stat-item">
                                 <span className="stat-label">H-AB</span>
@@ -140,16 +162,16 @@ export default function TeamPage() {
                               </div>
                               <div className="stat-item">
                                 <span className="stat-label">HR</span>
-                                <span className="stat-value">{player.home_runs || 0}</span>
+                                <span className="stat-value">{player.homeRuns || 0}</span>
                               </div>
                               <div className="stat-item">
                                 <span className="stat-label">SB</span>
-                                <span className="stat-value">{player.stolen_bases || 0}</span>
+                                <span className="stat-value">{player.sb || 0}</span>
                               </div>
                               <div className="stat-item">
-                                <span className="stat-label">AVG</span>
+                                <span className="stat-label">OPS</span>
                                 <span className="stat-value">
-                                  {typeof player.batting_average === 'number' ? player.batting_average.toFixed(3) : '.000'}
+                                  {typeof player.ops === 'number' ? player.ops.toFixed(3) : (typeof player.avg === 'number' ? player.avg.toFixed(3) : '.000')}
                                 </span>
                               </div>
                             </div>
@@ -158,7 +180,7 @@ export default function TeamPage() {
                               <div className="stat-item">
                                 <span className="stat-label">IP</span>
                                 <span className="stat-value">
-                                  {typeof player.innings_pitched === 'number' ? player.innings_pitched.toFixed(1) : '0.0'}
+                                  {typeof player.ip === 'number' ? player.ip.toFixed(1) : '0.0'}
                                 </span>
                               </div>
                               <div className="stat-item">
@@ -173,7 +195,7 @@ export default function TeamPage() {
                               </div>
                               <div className="stat-item">
                                 <span className="stat-label">K</span>
-                                <span className="stat-value">{player.strikeouts_pitcher || 0}</span>
+                                <span className="stat-value">{player.strikeouts || 0}</span>
                               </div>
                               <div className="stat-item">
                                 <span className="stat-label">SV</span>
@@ -189,9 +211,9 @@ export default function TeamPage() {
                           )}
                         </div>
                         
-                        {player.total_points !== undefined && player.total_points !== null && (
+                        {player.totalPoints !== undefined && player.totalPoints !== null && (
                           <div className="player-points">
-                            <strong>{player.total_points.toFixed(1)}</strong> pts
+                            <strong>{player.totalPoints.toFixed(1)}</strong> pts
                           </div>
                         )}
                       </div>

@@ -5,7 +5,7 @@ import { authOptions } from '@/lib/auth';
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ teamKey: string }> }
+  { params }: { params: { teamKey: string } }
 ) {
   const session = await getServerSession(authOptions);
   
@@ -14,7 +14,7 @@ export async function GET(
   }
 
   try {
-    const { teamKey } = await params;
+    const { teamKey } = params;
     const api = new YahooFantasyAPI((session as any).accessToken);
     
     // Test all possible endpoints to find fantasy points
@@ -25,7 +25,9 @@ export async function GET(
       instruction: 'Look for any endpoints that return player_points or fantasy point data'
     });
   } catch (error) {
-    console.error('API Error:', error);
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('API Error:', error);
+    }
     return NextResponse.json(
       { error: 'Failed to test endpoints' },
       { status: 500 }

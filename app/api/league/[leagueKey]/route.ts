@@ -5,7 +5,7 @@ import { authOptions } from '@/lib/auth';
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ leagueKey: string }> }
+  { params }: { params: { leagueKey: string } }
 ) {
   const session = await getServerSession(authOptions);
   
@@ -14,12 +14,14 @@ export async function GET(
   }
 
   try {
-    const { leagueKey } = await params;
+    const { leagueKey } = params;
     const api = new YahooFantasyAPI((session as any).accessToken);
     const data = await api.getLeague(leagueKey);
     return NextResponse.json({ league: data });
   } catch (error) {
-    console.error('API Error:', error);
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('API Error:', error);
+    }
     return NextResponse.json(
       { error: 'Failed to fetch league' },
       { status: 500 }

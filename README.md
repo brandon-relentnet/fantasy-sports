@@ -87,7 +87,6 @@ The app uses the Yahoo Fantasy Sports API v2 to fetch:
 - **Next.js 15**: React framework with App Router
 - **NextAuth.js**: Authentication with Yahoo OAuth
 - **TypeScript**: Type-safe development
-- **Tailwind CSS**: Utility-first styling
 - **Axios**: HTTP client for API requests
 
 ## Production Deployment
@@ -104,3 +103,10 @@ For production deployment:
 - **Authentication Issues**: Ensure your Yahoo app redirect URI matches exactly with `NEXTAUTH_URL/api/auth/callback/yahoo`
 - **API Rate Limits**: Yahoo has rate limits on their API. Implement caching if needed
 - **Missing Data**: Some API responses may vary based on league settings and current season status
+
+## Notes on Roster Filters
+
+- The Yahoo UI provides date-based filters (Today or a specific calendar date). This app supports:
+  - `Today` roster and stats: `GET /api/team/<teamKey>/roster`
+  - `Date`-based roster and stats: `GET /api/team/<teamKey>/roster?date=YYYY-MM-DD`
+- Weekly coverage is deprecated in this project. The old weekly endpoint now returns 410 with guidance.

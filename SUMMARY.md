@@ -8,18 +8,18 @@
 ## Core Features
 - Yahoo OAuth login via NextAuth (read access only).
 - League list and league details (standings, rankings).
-- Team views: roster, weekly roster, roster stats, current matchup, matchup history.
+- Team views: roster (today or date), roster stats, current matchup, matchup history.
 - Stat mapping via `lib/yahoo-stat-ids.ts` for human‑readable categories.
 
 ## User Flows
 1) Sign in with Yahoo → session established via NextAuth.
 2) Choose a league from overview → open league standings.
-3) Navigate to a team → inspect roster, weekly changes, and matchup context.
+3) Navigate to a team → inspect roster for today or a specific date, and matchup context.
 
 ## Architecture
 - Framework: Next.js 15 (App Router) + TypeScript; React 19.
 - Auth: NextAuth at `app/api/auth/[...nextauth]/route.ts`.
-- API routes: Server endpoints that proxy/shape Yahoo responses, e.g. `app/api/league/[leagueKey]/route.ts`, `app/api/team/[teamKey]/...` including `current-matchup`, `matchups`, `roster`, `roster/weekly`, `roster/stats`.
+- API routes: Server endpoints that proxy/shape Yahoo responses, e.g. `app/api/league/[leagueKey]/route.ts`, `app/api/team/[teamKey]/...` including `current-matchup`, `matchups`, `roster` (supports `?date=YYYY-MM-DD`), and `roster/stats`. The old `roster/weekly` endpoint is deprecated and returns 410.
 - UI pages: `app/league/[leagueKey]/page.tsx`, `app/team/[teamKey]/page.tsx`, root `app/page.tsx` and shared `app/layout.tsx`, `app/providers.tsx`.
 - Utilities: `lib/yahoo-api.ts` (Axios + xml2js), `lib/auth.ts`, `lib/logger.ts`.
 - HTTPS dev: `server.js` starts an HTTPS Next server using `certificates/localhost.crt|.key` and clears `debug.log` on boot.
@@ -56,7 +56,7 @@
   - `curl -b cookie.txt -c cookie.txt 'http://localhost:3000/api/team/<teamKey>/current-matchup'`
   - `curl -b cookie.txt -c cookie.txt 'http://localhost:3000/api/team/<teamKey>/matchups'`
   - `curl -b cookie.txt -c cookie.txt 'http://localhost:3000/api/team/<teamKey>/roster'`
-  - `curl -b cookie.txt -c cookie.txt 'http://localhost:3000/api/team/<teamKey>/roster/weekly'`
+  - `curl -b cookie.txt -c cookie.txt 'http://localhost:3000/api/team/<teamKey>/roster?date=2025-09-09'`
   - `curl -b cookie.txt -c cookie.txt 'http://localhost:3000/api/team/<teamKey>/roster/stats'`
 
 Notes

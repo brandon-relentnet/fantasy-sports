@@ -32,7 +32,9 @@ export const authOptions: NextAuthOptions = {
             grant_type: 'authorization_code'
           });
 
-          console.log('Token exchange successful!');
+          if (process.env.NODE_ENV !== 'production') {
+            console.log('Token exchange successful!');
+          }
 
           const response = await fetch(provider.token!.url!, {
             method: 'POST',
@@ -64,8 +66,10 @@ export const authOptions: NextAuthOptions = {
         // Provide a dummy userinfo endpoint that just returns a basic profile
         async request({ tokens, provider }) {
           // Return minimal user info since Yahoo's userinfo endpoint has issues
+          // Yahoo's userinfo endpoint is unreliable for some apps.
+          // Return a minimal, stable placeholder profile.
           return {
-            sub: 'yahoo-user-' + Date.now(),
+            sub: 'yahoo-user',
             name: 'Yahoo User',
             email: null,
             picture: null,
@@ -89,13 +93,17 @@ export const authOptions: NextAuthOptions = {
       if (account) {
         token.accessToken = account.access_token;
         token.refreshToken = account.refresh_token;
-        console.log('✅ Access token stored in JWT');
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('✅ Access token stored in JWT');
+        }
       }
       return token;
     },
     async session({ session, token }) {
       session.accessToken = token.accessToken;
-      console.log('✅ Session created with access token');
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('✅ Session created with access token');
+      }
       return session;
     },
   },

@@ -80,28 +80,40 @@ export function decodeYahooStats(stats: any[]): { [key: string]: any } {
     const value = stat.value?.[0];
     const statInfo = YAHOO_BASEBALL_STATS[statId];
     
+    // Some date-coverage responses encode Hits/At-Bats as a single "H/AB" string.
+    // If we detect a slash-delimited pair with integers or '-', parse into H and AB.
+    if (typeof value === 'string' && value.includes('/')) {
+      const parts = value.split('/');
+      if (parts.length === 2) {
+        const [hStr, abStr] = parts;
+        const h = hStr === '-' ? 0 : parseInt(hStr, 10);
+        const ab = abStr === '-' ? 0 : parseInt(abStr, 10);
+        if (!Number.isNaN(h) && !Number.isNaN(ab)) {
+          decoded['H'] = {
+            value: h,
+            name: 'Hits',
+            category: 'batting',
+            raw_stat_id: statId
+          };
+          decoded['AB'] = {
+            value: ab,
+            name: 'At Bats',
+            category: 'batting',
+            raw_stat_id: statId
+          };
+          // Do not continue mapping this stat to avoid accidental overwrite
+          // when providers reuse an ID to carry the H/AB pair.
+          continue;
+        }
+      }
+    }
+    
     if (statInfo) {
       // Convert to appropriate type
       let parsedValue: any = value;
       
-      // Handle special cases
-      if (statId === '60' && value && value.includes('/')) {
-        // H/AB format - parse hits and at bats
-        const [hits, atBats] = value.split('/');
-        decoded['H'] = {
-          value: hits === '-' ? 0 : parseInt(hits),
-          name: 'Hits',
-          category: 'batting',
-          raw_stat_id: statId
-        };
-        decoded['AB'] = {
-          value: atBats === '-' ? 0 : parseInt(atBats),
-          name: 'At Bats',
-          category: 'batting',
-          raw_stat_id: statId
-        };
-        continue;
-      } else if (statInfo.category === 'batting' && (statInfo.description === 'AVG' || statInfo.description === 'OBP' || statInfo.description === 'SLG' || statInfo.description === 'OPS' || statInfo.description === 'FPCT')) {
+      // Batting percentage-like stats are floats
+      if (statInfo.category === 'batting' && (statInfo.description === 'AVG' || statInfo.description === 'OBP' || statInfo.description === 'SLG' || statInfo.description === 'OPS' || statInfo.description === 'FPCT')) {
         parsedValue = parseFloat(value || '0');
       } else if (!isNaN(value) && value !== '-') {
         parsedValue = parseInt(value) || parseFloat(value);
@@ -130,19 +142,32 @@ export function decodeYahooStats(stats: any[]): { [key: string]: any } {
 }
 
 export function getKeyStats(decodedStats: any): any {
-  // Calculate batting average from hits and at-bats
-  const hits = decodedStats.H?.value || 0;
+  // Calculate batting average from hits and at-bats (or compute hits from AVG and AB if missing)
+  let hits = decodedStats.H?.value ?? undefined;
   const atBats = decodedStats.AB?.value || 0;
-  const calculatedAvg = atBats > 0 ? hits / atBats : 0;
+  const avg = decodedStats.AVG?.value;
+  const calculatedAvg = atBats > 0 && typeof hits === 'number' ? hits / atBats : (typeof avg === 'number' ? avg : 0);
+  if ((hits === undefined || hits === null) && atBats > 0 && typeof avg === 'number') {
+    // Derive hits from AVG and AB when Yahoo only provides AVG for the day
+    hits = Math.round(avg * atBats);
+  }
   
+  // Compute OPS if provided or derivable
+  const obp = decodedStats.OBP?.value;
+  const slg = decodedStats.SLG?.value;
+  const ops = (typeof decodedStats.OPS?.value === 'number')
+    ? decodedStats.OPS.value
+    : (typeof obp === 'number' && typeof slg === 'number' ? obp + slg : undefined);
+
   // Extract the most important fantasy stats
   return {
     // Batting - simplified to essential stats
-    hits: hits,
+    hits: hits || 0,
     runs: decodedStats.R?.value || 0,
     rbis: decodedStats.RBI?.value || 0,
     home_runs: decodedStats.HR?.value || 0,
     batting_average: decodedStats.AVG?.value || calculatedAvg,
+    ops,
     stolen_bases: decodedStats.SB?.value || 0,
     
     // Pitching - simplified to essential stats  

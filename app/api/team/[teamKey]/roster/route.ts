@@ -1,11 +1,11 @@
 import { getServerSession } from 'next-auth';
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { YahooFantasyAPI } from '@/lib/yahoo-api';
 import { authOptions } from '@/lib/auth';
 
 export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ teamKey: string }> }
+  request: NextRequest,
+  { params }: { params: { teamKey: string } }
 ) {
   const session = await getServerSession(authOptions);
   
@@ -14,12 +14,18 @@ export async function GET(
   }
 
   try {
-    const { teamKey } = await params;
+    const { teamKey } = params;
+    const { searchParams } = new URL(request.url);
+    const date = searchParams.get('date') || undefined;
     const api = new YahooFantasyAPI((session as any).accessToken);
-    const data = await api.getRoster(teamKey);
-    return NextResponse.json({ roster: data });
+    const data = date ? await api.getRosterByDate(teamKey, date) : await api.getRoster(teamKey);
+    // Basic schema check for first few items
+    const sample = Array.isArray(data) ? data.slice(0, 2) : [];
+    return NextResponse.json({ roster: data, sample, coverage: date ? { type: 'date', date } : { type: 'today' } });
   } catch (error) {
-    console.error('API Error:', error);
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('API Error:', error);
+    }
     return NextResponse.json(
       { error: 'Failed to fetch roster' },
       { status: 500 }

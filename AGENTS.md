@@ -19,14 +19,14 @@ Environment: copy `.env.local` from README. Required keys: `NEXTAUTH_URL`, `NEXT
 ## Coding Style & Naming Conventions
 - Language: TypeScript, React 19, Next.js 15 (App Router).
 - Indentation: 2 spaces; prefer named exports. File names: camelCase for utilities (`yahooApi`), kebab-case for folders; Next.js route files as `route.ts`.
-- API route params use bracketed folders (e.g., `app/api/team/[teamKey]/route.ts`).
+- API route params use bracketed folders (e.g., `app/api/team/[teamKey]/route.ts`). Do not type `params` as a Promise in App Router handlers.
 - Use `lib/logger.ts` for server-side logs; avoid console noise in production paths.
 - Run `npm run lint` before submitting; fix autofixable issues.
 
 ## Testing Guidelines
 - No formal test suite present. Add lightweight tests colocated under `__tests__/` or `*.test.ts` when introducing complex logic (e.g., parsing, mappers).
 - Prefer dependency-free assertions (Node test runner) or add Jest only if required by scope.
-- For API routes, validate with curl/httpie examples and edge cases (missing params, auth states).
+- For API routes, validate with curl/httpie examples and edge cases (missing params, auth states). Prefer date-based team roster filters over weekly.
 
 ## Commit & Pull Request Guidelines
 - Commits: concise, present tense. Prefix by scope when helpful: `app:`, `lib:`, `api:`, `types:`, `build:`, `docs:` (e.g., `api: add weekly roster endpoint`).
