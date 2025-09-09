@@ -128,12 +128,12 @@ export class YahooFantasyAPI {
     return team;
   }
 
-  async getRoster(teamKey: string) {
+  async getRoster(teamKey: string, opts?: { debugPlayerKey?: string }) {
     // Get roster with today's stats
     const endpoint = `/team/${teamKey}/roster/players/stats`;
     const data = await this.makeRequest(endpoint);
     logToFile('Raw Roster with Players Stats XML Structure', data);
-    const roster = this.parseRosterFromData(data);
+    const roster = this.parseRosterFromData(data, opts);
     logToFile('Parsed Roster', roster);
     return roster;
   }
@@ -148,7 +148,7 @@ export class YahooFantasyAPI {
     return this.getRosterByDate(teamKey);
   }
 
-  async getRosterByDate(teamKey: string, date?: string) {
+  async getRosterByDate(teamKey: string, date?: string, opts?: { debugPlayerKey?: string }) {
     // Fetch roster stats for a specific calendar date or today if not provided
     const endpoint = date
       ? `/team/${teamKey}/roster;date=${date}/players/stats`
@@ -157,12 +157,12 @@ export class YahooFantasyAPI {
     const data = await this.makeRequest(endpoint);
     logToFile('Raw Roster (date-based) XML Structure', data);
 
-    const roster = this.parseRosterFromData(data);
+    const roster = this.parseRosterFromData(data, opts);
     logToFile('Parsed Roster (date-based)', roster);
     return roster;
   }
 
-  private parseRosterFromData(data: any): Player[] {
+  private parseRosterFromData(data: any, opts?: { debugPlayerKey?: string }): Player[] {
     const roster: Player[] = [];
     try {
       const team = data?.fantasy_content?.team?.[0];
@@ -208,10 +208,19 @@ export class YahooFantasyAPI {
           model.wins = Math.round(keyStats.wins || 0);
           model.losses = Math.round(keyStats.losses || 0);
           model.saves = Math.round(keyStats.saves || 0);
-          model.strikeouts = Math.round((keyStats.strikeouts_pitcher ?? keyStats.strikeouts) || 0);
+          model.strikeouts = Math.round((keyStats.strikeouts) || 0);
           model.era = keyStats.era;
           model.whip = keyStats.whip;
           model.allStats = decodedStats;
+
+          if (opts?.debugPlayerKey && model.key === opts.debugPlayerKey) {
+            logToFile('DEBUG Player Decoded Stats', {
+              player_key: model.key,
+              name: model.name,
+              decodedStats,
+              keyStats,
+            });
+          }
         }
 
         if (player.player_points?.[0]) {

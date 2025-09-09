@@ -17,8 +17,11 @@ export async function GET(
     const { teamKey } = params;
     const { searchParams } = new URL(request.url);
     const date = searchParams.get('date') || undefined;
+    const debugPlayerKey = searchParams.get('debug') || undefined;
     const api = new YahooFantasyAPI((session as any).accessToken);
-    const data = date ? await api.getRosterByDate(teamKey, date) : await api.getRoster(teamKey);
+    const data = date 
+      ? await api.getRosterByDate(teamKey, date, { debugPlayerKey }) 
+      : await api.getRoster(teamKey, { debugPlayerKey });
     // Basic schema check for first few items
     const sample = Array.isArray(data) ? data.slice(0, 2) : [];
     return NextResponse.json({ roster: data, sample, coverage: date ? { type: 'date', date } : { type: 'today' } });

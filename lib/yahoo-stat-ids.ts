@@ -160,6 +160,7 @@ export function getKeyStats(decodedStats: any): any {
     : (typeof obp === 'number' && typeof slg === 'number' ? obp + slg : undefined);
 
   // Extract the most important fantasy stats
+  const strikeouts = decodedStats.K?.value || 0; // Works for both batting and pitching K
   return {
     // Batting - simplified to essential stats
     hits: hits || 0,
@@ -169,7 +170,7 @@ export function getKeyStats(decodedStats: any): any {
     batting_average: decodedStats.AVG?.value || calculatedAvg,
     ops,
     stolen_bases: decodedStats.SB?.value || 0,
-    
+
     // Pitching - simplified to essential stats  
     innings_pitched: decodedStats.IP?.value || 0,
     hits_allowed: decodedStats.HA?.value || 0,  // For pitchers, this is hits allowed
@@ -178,7 +179,7 @@ export function getKeyStats(decodedStats: any): any {
     losses: decodedStats.L?.value || 0,
     era: decodedStats.ERA?.value || 0,
     saves: decodedStats.SV?.value || 0,
-    strikeouts_pitcher: decodedStats.K?.value || 0,
+    strikeouts,
     whip: decodedStats.WHIP?.value || 0,
     
     // Keep all decoded stats for reference
