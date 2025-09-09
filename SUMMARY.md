@@ -19,9 +19,10 @@
 ## Architecture
 - Framework: Next.js 15 (App Router) + TypeScript; React 19.
 - Auth: NextAuth at `app/api/auth/[...nextauth]/route.ts`.
-- API routes: Server endpoints that proxy/shape Yahoo responses, e.g. `app/api/league/[leagueKey]/route.ts`, `app/api/team/[teamKey]/...` including `current-matchup`, `matchups`, `roster` (supports `?date=YYYY-MM-DD`), and `roster/stats`. The old `roster/weekly` endpoint is deprecated and returns 410. API handlers use `lib/apiRoute.ts` to retrieve access tokens.
+- Backend API: Separate Express server under `backend/` exposes endpoints that mirror the old Next API: `/leagues`, `/league/:leagueKey`, `/league/:leagueKey/standings`, `/team/:teamKey`, `/team/:teamKey/roster` (supports `?date=YYYY-MM-DD`), `/team/:teamKey/roster/stats`, `/team/:teamKey/current-matchup`, `/team/:teamKey/matchups`. Frontend calls these with `Authorization: Bearer <YahooAccessToken>`.
 - UI pages: `app/league/[leagueKey]/page.tsx`, `app/team/[teamKey]/page.tsx`, root `app/page.tsx` and shared `app/layout.tsx`, `app/providers.tsx`.
-- Utilities: `lib/yahoo-api.ts` (Axios + xml2js), `lib/yahoo-stat-ids.ts` (stat decoding), `lib/apiRoute.ts` (access token helper), `lib/auth.ts`, `lib/logger.ts`.
+- Backend Utilities: `backend/src/lib/yahooApi.ts` (Axios + xml2js), `backend/src/lib/yahooStatIds.ts` (stat decoding), `backend/src/lib/logger.ts`.
+- Frontend Utilities: NextAuth remains for Yahoo OAuth.
 - Types: `types/player.ts` defines normalized player fields including `hits` and `ops`.
 - HTTPS dev: `server.js` starts an HTTPS Next server using `certificates/localhost.crt|.key` and clears `debug.log` on boot.
 
@@ -46,23 +47,23 @@
 
 ## API Examples (curl)
 - Get leagues for the signed-in user
-  - `curl -b cookie.txt -c cookie.txt 'http://localhost:3000/api/leagues'`
+  - `curl -H 'Authorization: Bearer <token>' 'http://localhost:4000/leagues'`
 
 - Get league details/standings
-  - `curl -b cookie.txt -c cookie.txt 'http://localhost:3000/api/league/<leagueKey>'`
-  - `curl -b cookie.txt -c cookie.txt 'http://localhost:3000/api/league/<leagueKey>/standings'`
+  - `curl -H 'Authorization: Bearer <token>' 'http://localhost:4000/league/<leagueKey>'`
+  - `curl -H 'Authorization: Bearer <token>' 'http://localhost:4000/league/<leagueKey>/standings'`
 
 - Team endpoints
-  - `curl -b cookie.txt -c cookie.txt 'http://localhost:3000/api/team/<teamKey>'`
-  - `curl -b cookie.txt -c cookie.txt 'http://localhost:3000/api/team/<teamKey>/current-matchup'`
-  - `curl -b cookie.txt -c cookie.txt 'http://localhost:3000/api/team/<teamKey>/matchups'`
-  - `curl -b cookie.txt -c cookie.txt 'http://localhost:3000/api/team/<teamKey>/roster'`
-  - `curl -b cookie.txt -c cookie.txt 'http://localhost:3000/api/team/<teamKey>/roster?date=2025-09-09'`
-  - `curl -b cookie.txt -c cookie.txt 'http://localhost:3000/api/team/<teamKey>/roster/stats'`
+  - `curl -H 'Authorization: Bearer <token>' 'http://localhost:4000/team/<teamKey>'`
+  - `curl -H 'Authorization: Bearer <token>' 'http://localhost:4000/team/<teamKey>/current-matchup'`
+  - `curl -H 'Authorization: Bearer <token>' 'http://localhost:4000/team/<teamKey>/matchups'`
+  - `curl -H 'Authorization: Bearer <token>' 'http://localhost:4000/team/<teamKey>/roster'`
+  - `curl -H 'Authorization: Bearer <token>' 'http://localhost:4000/team/<teamKey>/roster?date=2025-09-09'`
+  - `curl -H 'Authorization: Bearer <token>' 'http://localhost:4000/team/<teamKey>/roster/stats'`
 
 Debugging
 - Log a specific player’s decoded stats for a date (dev only):
-  - `curl -b cookie.txt -c cookie.txt 'http://localhost:3000/api/team/<teamKey>/roster?date=2025-09-09&debug=<playerKey>'`
+  - `curl -H 'Authorization: Bearer <token>' 'http://localhost:4000/team/<teamKey>/roster?date=2025-09-09&debug=<playerKey>'`
   - Check `debug.log` for entries labeled `DEBUG Player Decoded Stats`.
 
 Notes

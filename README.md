@@ -37,13 +37,15 @@ openssl rand -base64 32
 npm install
 ```
 
-### 4. Run the Application
+### 4. Run the Application (frontend + backend)
+
+Start backend and frontend in parallel:
 
 ```bash
-npm run dev
+npm run dev:all
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Frontend runs at http://localhost:3000 and calls backend at http://localhost:4000.
 
 ## Features
 
@@ -76,7 +78,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## API Integration
 
-The app uses the Yahoo Fantasy Sports API v2 to fetch:
+The backend uses the Yahoo Fantasy Sports API v2 to fetch:
 - User leagues and teams
 - League standings and settings
 - Team rosters and player statistics
@@ -84,10 +86,8 @@ The app uses the Yahoo Fantasy Sports API v2 to fetch:
 
 ## Technologies Used
 
-- **Next.js 15**: React framework with App Router
-- **NextAuth.js**: Authentication with Yahoo OAuth
-- **TypeScript**: Type-safe development
-- **Axios**: HTTP client for API requests
+- Frontend: **Next.js 15** App Router, Tailwind CSS UI
+- Backend: **Express** + TypeScript, Axios, xml2js
 
 ## Production Deployment
 
@@ -101,7 +101,7 @@ For production deployment:
 ## Troubleshooting
 
 - **Authentication Issues**: Ensure your Yahoo app redirect URI matches exactly with `NEXTAUTH_URL/api/auth/callback/yahoo`
-- **API Rate Limits**: Yahoo has rate limits on their API. Implement caching if needed
+- **API Rate Limits**: Yahoo has rate limits on their API. Consider caching in backend
 - **Missing Data**: Some API responses may vary based on league settings and current season status
 
 ## Notes on Roster Filters

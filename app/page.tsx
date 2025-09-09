@@ -27,10 +27,18 @@ export default function Home() {
     }
   }, [session]);
 
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:4000';
+
+  const authHeader = async () => {
+    // Session contains accessToken set by NextAuth callbacks
+    const token = (session as any)?.accessToken;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
   const fetchLeagues = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/leagues');
+      const res = await fetch(`${API_BASE}/leagues`, { headers: await authHeader() });
       const data = await res.json();
       const arr: League[] = Array.isArray(data.leagues)
         ? data.leagues
@@ -51,7 +59,7 @@ export default function Home() {
     setRoster([]);
     setLoading(true);
     try {
-      const leagueRes = await fetch(`/api/league/${encodeURIComponent(leagueKey)}/standings`);
+      const leagueRes = await fetch(`${API_BASE}/league/${encodeURIComponent(leagueKey)}/standings`, { headers: await authHeader() });
       const leagueData = await leagueRes.json();
       const t = (leagueData.standings || []).map((x: any) => ({ team_key: x.team_key, name: x.name }));
       setTeams(t);
@@ -68,7 +76,7 @@ export default function Home() {
     setLoading(true);
     try {
       const query = dateMode === 'date' && date ? `?date=${encodeURIComponent(date)}` : '';
-      const rosterRes = await fetch(`/api/team/${encodeURIComponent(teamKey)}/roster${query}`);
+      const rosterRes = await fetch(`${API_BASE}/team/${encodeURIComponent(teamKey)}/roster${query}`, { headers: await authHeader() });
       const rosterData = await rosterRes.json();
       setRoster(rosterData.roster || []);
     } finally {
@@ -81,7 +89,7 @@ export default function Home() {
     setLoading(true);
     try {
       const query = dateMode === 'date' && date ? `?date=${encodeURIComponent(date)}` : '';
-      const res = await fetch(`/api/team/${encodeURIComponent(selectedTeam)}/roster${query}`);
+      const res = await fetch(`${API_BASE}/team/${encodeURIComponent(selectedTeam)}/roster${query}`, { headers: await authHeader() });
       const data = await res.json();
       setRoster(data.roster || []);
     } finally {
