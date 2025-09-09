@@ -11,9 +11,9 @@ export default function Home() {
   const [leagues, setLeagues] = useState<League[]>([]);
   const [teams, setTeams] = useState<TeamSummary[]>([]);
   const [roster, setRoster] = useState<any[]>([]);
-  const [hideBench, setHideBench] = useState(false);
-  const [hideBatters, setHideBatters] = useState(false);
-  const [hidePitchers, setHidePitchers] = useState(false);
+  const [typeFilter, setTypeFilter] = useState<'all' | 'batters' | 'pitchers'>('all');
+  const [showBench, setShowBench] = useState(true);
+  const [showIL, setShowIL] = useState(true);
   const [selectedLeague, setSelectedLeague] = useState<string>('');
   const [selectedTeam, setSelectedTeam] = useState<string>('');
   const [dateMode, setDateMode] = useState<'today' | 'date'>('today');
@@ -170,6 +170,46 @@ export default function Home() {
             </div>
           )}
 
+          {/* Player type filter */}
+          <div className="inline-flex rounded-md bg-zinc-800 border border-zinc-700 p-1">
+            <button
+              className={`px-3 py-1.5 rounded-md text-sm ${typeFilter==='all' ? 'bg-zinc-700 text-white' : 'text-zinc-300 hover:text-white'}`}
+              onClick={() => setTypeFilter('all')}
+              type="button"
+              title="Show all players"
+            >
+              All
+            </button>
+            <button
+              className={`px-3 py-1.5 rounded-md text-sm ${typeFilter==='batters' ? 'bg-zinc-700 text-white' : 'text-zinc-300 hover:text-white'}`}
+              onClick={() => setTypeFilter('batters')}
+              type="button"
+              title="Show only batters"
+            >
+              Batters
+            </button>
+            <button
+              className={`px-3 py-1.5 rounded-md text-sm ${typeFilter==='pitchers' ? 'bg-zinc-700 text-white' : 'text-zinc-300 hover:text-white'}`}
+              onClick={() => setTypeFilter('pitchers')}
+              type="button"
+              title="Show only pitchers"
+            >
+              Pitchers
+            </button>
+          </div>
+
+          {/* Show/hide toggles */}
+          <div className="flex items-center gap-3 text-sm">
+            <label className="inline-flex items-center gap-2 text-zinc-300">
+              <input type="checkbox" className="accent-violet-600" checked={showBench} onChange={(e) => setShowBench(e.target.checked)} />
+              Show Bench
+            </label>
+            <label className="inline-flex items-center gap-2 text-zinc-300">
+              <input type="checkbox" className="accent-violet-600" checked={showIL} onChange={(e) => setShowIL(e.target.checked)} />
+              Show IL
+            </label>
+          </div>
+
           <button onClick={refreshRoster} className="ml-auto px-3 py-1.5 rounded-md bg-violet-600 hover:bg-violet-500 text-white disabled:opacity-50" disabled={!selectedTeam || (dateMode==='date' && !date)}>Apply</button>
         </div>
       )}
@@ -252,22 +292,6 @@ export default function Home() {
               <h3 className="text-lg font-semibold">Roster</h3>
               <span className="text-xs text-zinc-400">{selectedTeam}</span>
             </div>
-            {/* Filters */}
-            <div className="mb-3 flex flex-wrap items-center gap-3 text-sm">
-              <div className="flex items-center gap-2">
-                <input id="hideBench" type="checkbox" className="accent-violet-600" checked={hideBench} onChange={(e) => setHideBench(e.target.checked)} />
-                <label htmlFor="hideBench" className="text-zinc-300 select-none">Hide bench</label>
-              </div>
-              <div className="flex items-center gap-2">
-                <input id="hideBatters" type="checkbox" className="accent-violet-600" checked={hideBatters} onChange={(e) => setHideBatters(e.target.checked)} />
-                <label htmlFor="hideBatters" className="text-zinc-300 select-none">Hide batters</label>
-              </div>
-              <div className="flex items-center gap-2">
-                <input id="hidePitchers" type="checkbox" className="accent-violet-600" checked={hidePitchers} onChange={(e) => setHidePitchers(e.target.checked)} />
-                <label htmlFor="hidePitchers" className="text-zinc-300 select-none">Hide pitchers</label>
-              </div>
-            </div>
-
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
                 <thead className="text-zinc-300">
@@ -292,11 +316,14 @@ export default function Home() {
                 </thead>
                 <tbody>
                   {(roster.filter((p: any) => {
-                    const isBench = (p.selectedPosition || '').toUpperCase() === 'BN';
-                    if (hideBench && isBench) return false;
+                    const selPos = (p.selectedPosition || '').toUpperCase();
+                    const isBench = selPos === 'BN';
+                    const isIL = selPos === 'IL' || selPos === 'DL' || (Array.isArray(p.eligiblePositions) && p.eligiblePositions.includes('IL'));
+                    if (!showBench && isBench) return false;
+                    if (!showIL && isIL) return false;
                     const type = (p.positionType || '').toUpperCase();
-                    if (hideBatters && type === 'B') return false;
-                    if (hidePitchers && type === 'P') return false;
+                    if (typeFilter === 'batters' && type === 'P') return false;
+                    if (typeFilter === 'pitchers' && type === 'B') return false;
                     return true;
                   })).map((p: any) => (
                     <tr key={p.key} className="border-b border-zinc-800 hover:bg-zinc-800/50">
