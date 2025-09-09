@@ -1,6 +1,6 @@
-import '../app/globals.css'
+import './globals.css'
 import type { Metadata } from 'next'
-import { Providers } from '../app/providers'
+import { Providers } from './providers'
 
 export const metadata: Metadata = {
   title: 'Yahoo Fantasy Baseball',
@@ -24,4 +24,3 @@ export default function RootLayout({
     </html>
   )
 }
-
