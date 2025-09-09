@@ -7,6 +7,7 @@ import { Player } from '@/types/player';
 
 const parseXML = promisify(parseString);
 const YAHOO_API_BASE = 'https://fantasysports.yahooapis.com/fantasy/v2';
+const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36';
 
 export class YahooFantasyAPI {
   private accessToken: string;
@@ -21,7 +22,7 @@ export class YahooFantasyAPI {
         headers: {
           Authorization: `Bearer ${this.accessToken}`,
           Accept: 'application/xml',
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36',
+          'User-Agent': USER_AGENT,
         },
       });
       
@@ -29,7 +30,9 @@ export class YahooFantasyAPI {
       const parsedData = await parseXML(response.data);
       return parsedData;
     } catch (error) {
-      console.error('Yahoo API Error:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Yahoo API Error:', error);
+      }
       throw error;
     }
   }
@@ -130,84 +133,7 @@ export class YahooFantasyAPI {
     const endpoint = `/team/${teamKey}/roster/players/stats`;
     const data = await this.makeRequest(endpoint);
     logToFile('Raw Roster with Players Stats XML Structure', data);
-    
-    const roster: Player[] = [];
-    
-    try {
-      const team = data?.fantasy_content?.team?.[0];
-      if (team?.roster?.[0]?.players?.[0]?.player) {
-        const players = team.roster[0].players[0].player;
-        const playerArray = Array.isArray(players) ? players : [players];
-        
-        logToFile('Sample Player Structure', playerArray[0]);
-        
-        for (const player of playerArray) {
-          const eligible = player.eligible_positions?.[0]?.position || [];
-          const eligibleArray = Array.isArray(eligible) ? eligible : [eligible].filter(Boolean);
-          const playerData: Player = {
-            id: player.player_id?.[0],
-            key: player.player_key?.[0],
-            name: player.name?.[0]?.full?.[0],
-            firstName: player.name?.[0]?.first?.[0],
-            lastName: player.name?.[0]?.last?.[0],
-            teamAbbr: player.editorial_team_abbr?.[0],
-            teamFullName: player.editorial_team_full_name?.[0],
-            uniformNumber: player.uniform_number?.[0],
-            position: player.display_position?.[0] || player.primary_position?.[0],
-            selectedPosition: player.selected_position?.[0]?.position?.[0],
-            eligiblePositions: eligibleArray,
-            imageUrl: player.image_url?.[0],
-            headshot: player.headshot?.[0]?.url?.[0],
-            isUndroppable: player.is_undroppable?.[0] === '1',
-            positionType: player.position_type?.[0],
-          };
-
-          // Parse player stats using the proper stat ID decoder
-          if (player.player_stats?.[0]?.stats?.[0]?.stat) {
-            const stats = player.player_stats[0].stats[0].stat;
-            const statsArray = Array.isArray(stats) ? stats : [stats];
-            
-            // Decode all stats using our mapping
-            const decodedStats = decodeYahooStats(statsArray);
-            const keyStats = getKeyStats(decodedStats);
-            // Map to normalized names
-            playerData.hits = Math.round(keyStats.hits || 0);
-            playerData.runs = Math.round(keyStats.runs || 0);
-            playerData.rbis = Math.round(keyStats.rbis || 0);
-            playerData.homeRuns = Math.round(keyStats.home_runs || 0);
-            playerData.avg = keyStats.batting_average;
-            playerData.ops = typeof keyStats.ops === 'number' ? keyStats.ops : undefined;
-            playerData.sb = Math.round(keyStats.stolen_bases || 0);
-            playerData.ip = keyStats.innings_pitched;
-            playerData.wins = Math.round(keyStats.wins || 0);
-            playerData.losses = Math.round(keyStats.losses || 0);
-            playerData.saves = Math.round(keyStats.saves || 0);
-            playerData.strikeouts = Math.round((keyStats.strikeouts_pitcher ?? keyStats.strikeouts) || 0);
-            playerData.era = keyStats.era;
-            playerData.whip = keyStats.whip;
-            
-            // Store all decoded stats for reference
-            playerData.allStats = decodedStats;
-          }
-
-          // Parse player points if available
-          if (player.player_points?.[0]) {
-            playerData.totalPoints = parseFloat(player.player_points[0].total?.[0] || '0');
-            
-            // Check for weekly points
-            if (player.player_points[0].coverage_type?.[0] === 'week') {
-              playerData.weekPoints = parseFloat(player.player_points[0].total?.[0] || '0');
-              playerData.week = player.player_points[0].coverage_value?.[0];
-            }
-          }
-
-          roster.push(playerData);
-        }
-      }
-    } catch (parseError) {
-      console.error('Error parsing roster data:', parseError);
-    }
-    
+    const roster = this.parseRosterFromData(data);
     logToFile('Parsed Roster', roster);
     return roster;
   }
@@ -231,74 +157,79 @@ export class YahooFantasyAPI {
     const data = await this.makeRequest(endpoint);
     logToFile('Raw Roster (date-based) XML Structure', data);
 
-    const roster: Player[] = [];
+    const roster = this.parseRosterFromData(data);
+    logToFile('Parsed Roster (date-based)', roster);
+    return roster;
+  }
 
+  private parseRosterFromData(data: any): Player[] {
+    const roster: Player[] = [];
     try {
       const team = data?.fantasy_content?.team?.[0];
-      if (team?.roster?.[0]?.players?.[0]?.player) {
-        const players = team.roster[0].players[0].player;
-        const playerArray = Array.isArray(players) ? players : [players];
+      if (!team?.roster?.[0]?.players?.[0]?.player) return roster;
+      const players = team.roster[0].players[0].player;
+      const playerArray = Array.isArray(players) ? players : [players];
 
-        for (const player of playerArray) {
-          const eligible = player.eligible_positions?.[0]?.position || [];
-          const eligibleArray = Array.isArray(eligible) ? eligible : [eligible].filter(Boolean);
-          const base: Player = {
-            id: player.player_id?.[0],
-            key: player.player_key?.[0],
-            name: player.name?.[0]?.full?.[0],
-            firstName: player.name?.[0]?.first?.[0],
-            lastName: player.name?.[0]?.last?.[0],
-            teamAbbr: player.editorial_team_abbr?.[0],
-            teamFullName: player.editorial_team_full_name?.[0],
-            uniformNumber: player.uniform_number?.[0],
-            position: player.display_position?.[0] || player.primary_position?.[0],
-            selectedPosition: player.selected_position?.[0]?.position?.[0],
-            eligiblePositions: eligibleArray,
-            imageUrl: player.image_url?.[0],
-            headshot: player.headshot?.[0]?.url?.[0],
-            isUndroppable: player.is_undroppable?.[0] === '1',
-            positionType: player.position_type?.[0],
-          };
+      for (const player of playerArray) {
+        const eligible = player.eligible_positions?.[0]?.position || [];
+        const eligibleArray = Array.isArray(eligible) ? eligible : [eligible].filter(Boolean);
+        const model: Player = {
+          id: player.player_id?.[0],
+          key: player.player_key?.[0],
+          name: player.name?.[0]?.full?.[0],
+          firstName: player.name?.[0]?.first?.[0],
+          lastName: player.name?.[0]?.last?.[0],
+          teamAbbr: player.editorial_team_abbr?.[0],
+          teamFullName: player.editorial_team_full_name?.[0],
+          uniformNumber: player.uniform_number?.[0],
+          position: player.display_position?.[0] || player.primary_position?.[0],
+          selectedPosition: player.selected_position?.[0]?.position?.[0],
+          eligiblePositions: eligibleArray,
+          imageUrl: player.image_url?.[0],
+          headshot: player.headshot?.[0]?.url?.[0],
+          isUndroppable: player.is_undroppable?.[0] === '1',
+          positionType: player.position_type?.[0],
+        };
 
-          if (player.player_stats?.[0]?.stats?.[0]?.stat) {
-            const stats = player.player_stats[0].stats[0].stat;
-            const statsArray = Array.isArray(stats) ? stats : [stats];
-            const decodedStats = decodeYahooStats(statsArray);
-            const keyStats = getKeyStats(decodedStats);
+        if (player.player_stats?.[0]?.stats?.[0]?.stat) {
+          const stats = player.player_stats[0].stats[0].stat;
+          const statsArray = Array.isArray(stats) ? stats : [stats];
+          const decodedStats = decodeYahooStats(statsArray);
+          const keyStats = getKeyStats(decodedStats);
 
-            base.hits = Math.round(keyStats.hits || 0);
-            base.runs = Math.round(keyStats.runs || 0);
-            base.rbis = Math.round(keyStats.rbis || 0);
-            base.homeRuns = Math.round(keyStats.home_runs || 0);
-            base.avg = keyStats.batting_average;
-            base.ops = typeof keyStats.ops === 'number' ? keyStats.ops : undefined;
-            base.sb = Math.round(keyStats.stolen_bases || 0);
-            base.ip = keyStats.innings_pitched;
-            base.wins = Math.round(keyStats.wins || 0);
-            base.losses = Math.round(keyStats.losses || 0);
-            base.saves = Math.round(keyStats.saves || 0);
-            base.strikeouts = Math.round((keyStats.strikeouts_pitcher ?? keyStats.strikeouts) || 0);
-            base.era = keyStats.era;
-            base.whip = keyStats.whip;
-            base.allStats = decodedStats;
-          }
-
-          if (player.player_points?.[0]) {
-            base.totalPoints = parseFloat(player.player_points[0].total?.[0] || '0');
-            if (player.player_points[0].coverage_type?.[0] === 'date') {
-              base.weekPoints = parseFloat(player.player_points[0].total?.[0] || '0');
-              base.week = player.player_points[0].coverage_value?.[0];
-            }
-          }
-
-          roster.push(base);
+          model.hits = Math.round(keyStats.hits || 0);
+          model.runs = Math.round(keyStats.runs || 0);
+          model.rbis = Math.round(keyStats.rbis || 0);
+          model.homeRuns = Math.round(keyStats.home_runs || 0);
+          model.avg = keyStats.batting_average;
+          model.ops = typeof keyStats.ops === 'number' ? keyStats.ops : undefined;
+          model.sb = Math.round(keyStats.stolen_bases || 0);
+          model.ip = keyStats.innings_pitched;
+          model.wins = Math.round(keyStats.wins || 0);
+          model.losses = Math.round(keyStats.losses || 0);
+          model.saves = Math.round(keyStats.saves || 0);
+          model.strikeouts = Math.round((keyStats.strikeouts_pitcher ?? keyStats.strikeouts) || 0);
+          model.era = keyStats.era;
+          model.whip = keyStats.whip;
+          model.allStats = decodedStats;
         }
-      }
-    } catch (parseError) {
-      console.error('Error parsing date-based roster data:', parseError);
-    }
 
-    logToFile('Parsed Roster (date-based)', roster);
+        if (player.player_points?.[0]) {
+          model.totalPoints = parseFloat(player.player_points[0].total?.[0] || '0');
+          const coverageType = player.player_points[0].coverage_type?.[0];
+          if (coverageType === 'week' || coverageType === 'date') {
+            model.weekPoints = parseFloat(player.player_points[0].total?.[0] || '0');
+            model.week = player.player_points[0].coverage_value?.[0];
+          }
+        }
+
+        roster.push(model);
+      }
+    } catch (e) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Error parsing roster data:', e);
+      }
+    }
     return roster;
   }
 
