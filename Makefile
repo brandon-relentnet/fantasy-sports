@@ -10,12 +10,11 @@ dev:
 
 install:
 	@echo "Installing frontend and backend dependencies";
-	npm install;
-	cd $(BACKEND_DIR) && npm install
-	cd $(FRONTEND_DIR) && npm install || true
+	npm --prefix $(BACKEND_DIR) install
+	npm --prefix $(FRONTEND_DIR) install
 
 backend:
-    cd $(BACKEND_DIR) && npm run start
+	cd $(BACKEND_DIR) && npm run start
 
 frontend:
 	$(FRONTEND_HTTPS_CMD)
