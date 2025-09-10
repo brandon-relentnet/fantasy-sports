@@ -56,8 +56,8 @@ function FantasyBaseballPanel() {
       }
       if (savedLeague) setSelectedLeague(savedLeague);
       if (savedTeam) setSelectedTeam(savedTeam);
-      if (savedMode === 'today' || savedMode === 'date') setDateMode(savedMode);
-      if (savedDate && /^\d{4}-\d{2}-\d{2}$/.test(savedDate)) setDate(savedDate);
+      if (savedMode === 'today' || savedMode === 'date') dispatch(setFantasyDateMode(savedMode));
+      if (savedDate && /^\d{4}-\d{2}-\d{2}$/.test(savedDate)) dispatch(setFantasyDate(savedDate));
     } catch {}
   }, []);
 
@@ -216,7 +216,7 @@ function FantasyBaseballPanel() {
   return (
     <div className="space-y-3">
       {/* Header controls */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 relative z-10">
         {/* Access token */}
         {step === 'signin' && (
           <div className="flex items-center gap-2 w-full">
@@ -245,12 +245,12 @@ function FantasyBaseballPanel() {
               />
               <span className="label-text">Enable Yahoo Fantasy</span>
             </label>
-                <div className="border border-base-300 rounded-md join">
+                <div className="border border-base-300 rounded-md join pointer-events-auto">
                   <button className={`join-item btn btn-xs ${dateMode==='today' ? 'btn-active' : ''}`} onClick={() => dispatch(setFantasyDateMode('today'))}>Today</button>
                   <button className={`join-item btn btn-xs ${dateMode==='date' ? 'btn-active' : ''}`} onClick={() => { dispatch(setFantasyDateMode('date')); if (!date) setToday(); }}>Date</button>
                 </div>
             {dateMode === 'date' && (
-              <div className="join">
+              <div className="join pointer-events-auto">
                 <button className="join-item btn btn-xs" aria-label="Next day" onClick={() => shiftDate(1)}>↑</button>
                 <input type="date" className="input-bordered join-item input input-xs" value={date} onChange={(e) => { dispatch(setFantasyDate(e.target.value)); if (selectedTeam) setTimeout(() => refreshRoster(), 0); }} />
                 <button className="join-item btn btn-xs" aria-label="Previous day" onClick={() => shiftDate(-1)}>↓</button>
@@ -258,18 +258,18 @@ function FantasyBaseballPanel() {
               </div>
             )}
 
-                <div className="border border-base-300 rounded-md join">
+                <div className="border border-base-300 rounded-md join pointer-events-auto">
                   <button className={`join-item btn btn-xs ${typeFilter==='all' ? 'btn-active' : ''}`} onClick={() => dispatch(setFantasyTypeFilter('all'))}>All</button>
                   <button className={`join-item btn btn-xs ${typeFilter==='batters' ? 'btn-active' : ''}`} onClick={() => dispatch(setFantasyTypeFilter('batters'))}>Batters</button>
                   <button className={`join-item btn btn-xs ${typeFilter==='pitchers' ? 'btn-active' : ''}`} onClick={() => dispatch(setFantasyTypeFilter('pitchers'))}>Pitchers</button>
                 </div>
-                <label className="gap-2 cursor-pointer label">
+                <label className="gap-2 cursor-pointer label pointer-events-auto">
                   <input type="checkbox" className="checkbox checkbox-xs" checked={showExtras} onChange={(e) => dispatch(setFantasyShowExtras(e.target.checked))} />
                   <span className="label-text">Show Bench & IL</span>
                 </label>
 
             {/* Sorting Controls */}
-                <div className="border border-base-300 rounded-md join">
+                <div className="border border-base-300 rounded-md join pointer-events-auto">
                   <select className="join-item select select-xs" value={sortKey} onChange={(e) => dispatch(setFantasySortKey(e.target.value))}>
                     <option value="">Sort: None</option>
                 <optgroup label="Batters">
