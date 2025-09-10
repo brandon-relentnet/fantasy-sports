@@ -17,10 +17,19 @@ class YahooFantasyAPI {
         this.accessToken = accessToken;
     }
     async makeRequest(endpoint) {
-        const response = await axios_1.default.get(`${YAHOO_API_BASE}${endpoint}`, {
-            headers: { Authorization: `Bearer ${this.accessToken}`, Accept: 'application/xml', 'User-Agent': USER_AGENT },
-        });
-        return parseXML(response.data);
+        try {
+            const response = await axios_1.default.get(`${YAHOO_API_BASE}${endpoint}`, {
+                headers: { Authorization: `Bearer ${this.accessToken}`, Accept: 'application/xml', 'User-Agent': USER_AGENT },
+            });
+            return parseXML(response.data);
+        }
+        catch (err) {
+            const status = err?.response?.status;
+            const data = err?.response?.data;
+            (0, logger_1.logToFile)('Yahoo API request failed', { endpoint, status, data: typeof data === 'string' ? data : JSON.stringify(data) });
+            const message = status ? `Yahoo API error ${status}` : (err?.message || 'Yahoo API request failed');
+            throw new Error(message);
+        }
     }
     async getUserLeagues(gameKey = 'mlb') {
         const data = await this.makeRequest(`/users;use_login=1/games;game_keys=${gameKey}/leagues`);

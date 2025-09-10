@@ -8,6 +8,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { setToggles } from "@/entrypoints/store/togglesSlice.js";
 import { setSortKey as setFantasySortKey, setSortDir as setFantasySortDir, setDateMode as setFantasyDateMode, setDate as setFantasyDate, setTypeFilter as setFantasyTypeFilter, setShowExtras as setFantasyShowExtras } from "@/entrypoints/store/fantasySlice.js";
 import { API_ENDPOINTS } from "@/entrypoints/config/endpoints.js";
+ 
 
 function FantasyBaseballPanel() {
   const dispatch = useDispatch();
@@ -52,8 +53,6 @@ function FantasyBaseballPanel() {
       if (saved) {
         setAccessToken(saved);
         setStep('league');
-        // Preload leagues quietly
-        setTimeout(() => fetchLeagues(), 0);
       }
       if (savedLeague) setSelectedLeague(savedLeague);
       if (savedTeam) setSelectedTeam(savedTeam);
@@ -85,7 +84,6 @@ function FantasyBaseballPanel() {
         setAccessToken(event.data.accessToken);
         window.removeEventListener('message', listener);
         if (win) try { win.close(); } catch {}
-        setTimeout(() => fetchLeagues(), 0);
       }
     };
     window.addEventListener('message', listener);
@@ -228,7 +226,7 @@ function FantasyBaseballPanel() {
         {accessToken && (
           <div className="flex items-center gap-2">
             <span className="badge badge-success badge-sm">Signed in</span>
-            <button className="btn btn-ghost btn-xs" onClick={() => { try { localStorage.removeItem('yahoo_access_token'); } catch {}; setAccessToken(''); setLeagues([]); setTeams([]); setRoster([]); setStep('signin'); }}>Sign out</button>
+            <button className="btn btn-ghost btn-xs" onClick={() => { try { localStorage.removeItem('yahoo_access_token'); localStorage.removeItem('yahoo_selected_league'); localStorage.removeItem('yahoo_selected_team'); } catch {}; setAccessToken(''); setSelectedLeague(''); setSelectedTeam(''); setLeagues([]); setTeams([]); setRoster([]); setStep('signin'); }}>Sign out</button>
           </div>
         )}
 
@@ -254,7 +252,7 @@ function FantasyBaseballPanel() {
             {dateMode === 'date' && (
               <div className="join">
                 <button className="join-item btn btn-xs" aria-label="Next day" onClick={() => shiftDate(1)}>↑</button>
-                <input type="date" className="input-bordered join-item input input-xs" value={date} onChange={(e) => { setDate(e.target.value); if (selectedTeam) setTimeout(() => refreshRoster(), 0); }} />
+                <input type="date" className="input-bordered join-item input input-xs" value={date} onChange={(e) => { dispatch(setFantasyDate(e.target.value)); if (selectedTeam) setTimeout(() => refreshRoster(), 0); }} />
                 <button className="join-item btn btn-xs" aria-label="Previous day" onClick={() => shiftDate(-1)}>↓</button>
                 <button className="join-item btn btn-xs" onClick={setToday}>Today</button>
               </div>

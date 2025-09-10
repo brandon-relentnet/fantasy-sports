@@ -12,10 +12,18 @@ export class YahooFantasyAPI {
   constructor(private accessToken: string) {}
 
   private async makeRequest(endpoint: string) {
-    const response = await axios.get(`${YAHOO_API_BASE}${endpoint}`, {
-      headers: { Authorization: `Bearer ${this.accessToken}`, Accept: 'application/xml', 'User-Agent': USER_AGENT },
-    });
-    return parseXML(response.data);
+    try {
+      const response = await axios.get(`${YAHOO_API_BASE}${endpoint}`, {
+        headers: { Authorization: `Bearer ${this.accessToken}`, Accept: 'application/xml', 'User-Agent': USER_AGENT },
+      });
+      return parseXML(response.data);
+    } catch (err: any) {
+      const status = err?.response?.status;
+      const data = err?.response?.data;
+      logToFile('Yahoo API request failed', { endpoint, status, data: typeof data === 'string' ? data : JSON.stringify(data) });
+      const message = status ? `Yahoo API error ${status}` : (err?.message || 'Yahoo API request failed');
+      throw new Error(message);
+    }
   }
 
   async getUserLeagues(gameKey = 'mlb') {
@@ -243,4 +251,3 @@ export class YahooFantasyAPI {
     }
   }
 }
-

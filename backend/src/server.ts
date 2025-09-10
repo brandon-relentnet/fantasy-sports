@@ -35,8 +35,13 @@ function getToken(req: Request): string | null {
 app.get('/leagues', async (req: Request, res: Response) => {
   const token = getToken(req); if (!token) return res.status(401).json({ error: 'Unauthorized' });
   const api = new YahooFantasyAPI(token);
-  try { const leagues = await api.getUserLeagues(); res.json({ leagues }); }
-  catch { res.status(500).json({ error: 'Failed to fetch leagues' }); }
+  try {
+    const leagues = await api.getUserLeagues();
+    res.json({ leagues });
+  } catch (e: any) {
+    console.error('Error in /leagues:', e?.message || e);
+    res.status(500).json({ error: 'Failed to fetch leagues', details: e?.message || String(e) });
+  }
 });
 
 // Yahoo OAuth: start -> redirect to Yahoo auth
@@ -126,7 +131,7 @@ app.get('/league/:leagueKey/standings', async (req: Request, res: Response) => {
   const token = getToken(req); if (!token) return res.status(401).json({ error: 'Unauthorized' });
   const api = new YahooFantasyAPI(token);
   try { const standings = await api.getStandings(req.params.leagueKey); res.json({ standings }); }
-  catch { res.status(500).json({ error: 'Failed to fetch standings' }); }
+  catch (e: any) { console.error('Error in /league/:leagueKey/standings:', e?.message || e); res.status(500).json({ error: 'Failed to fetch standings', details: e?.message || String(e) }); }
 });
 
 app.get('/team/:teamKey', async (req: Request, res: Response) => {
@@ -145,8 +150,9 @@ app.get('/team/:teamKey/roster', async (req: Request, res: Response) => {
     const roster = await api.getRosterByDate(req.params.teamKey, date, { debugPlayerKey: debug });
     const sample = Array.isArray(roster) ? roster.slice(0, 2) : [];
     res.json({ roster, sample, coverage: date ? { type: 'date', date } : { type: 'today' } });
-  } catch {
-    res.status(500).json({ error: 'Failed to fetch roster' });
+  } catch (e: any) {
+    console.error('Error in /team/:teamKey/roster:', e?.message || e);
+    res.status(500).json({ error: 'Failed to fetch roster', details: e?.message || String(e) });
   }
 });
 

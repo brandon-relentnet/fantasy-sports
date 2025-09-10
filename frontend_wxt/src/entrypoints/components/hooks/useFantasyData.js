@@ -20,8 +20,8 @@ export default function useFantasyData() {
   });
   const enabled = useSelector((state) => (state.toggles?.YAHOO_FANTASY ?? true));
 
+  // Listen only for token/team changes from popup
   useEffect(() => {
-    // Listen only for token/team changes from popup
     const onStorage = (e) => {
       if (e.key === 'yahoo_access_token') setAccessToken(e.newValue || '');
       if (e.key === 'yahoo_selected_team') setSelectedTeam(e.newValue || '');
