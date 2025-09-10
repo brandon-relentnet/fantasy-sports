@@ -126,7 +126,8 @@ export const Carousel = memo(function Carousel() {
 
     // Add fantasy roster cards (limit to first 10 for space)
     if (fantasyRoster?.length > 0) {
-      const badge = fantasyDateMode === 'date' ? fantasyDate : (fantasyDateMode === 'today' ? 'Today' : '');
+      const todayStr = (() => { try { const d=new Date(); const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const da=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${da}`; } catch { return ''; } })();
+      const badge = fantasyDate ? (fantasyDate === todayStr ? 'Today' : fantasyDate) : '';
       fantasyRoster.slice(0, 10).forEach((player) => {
         items.push(
           <CardWrapper key={`fantasy-${player.key}`} index={index++}>

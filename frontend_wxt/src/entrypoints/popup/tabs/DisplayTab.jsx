@@ -257,19 +257,13 @@ function FantasyBaseballPanel() {
               </div>
             )}
 
-            {/* Filters */}
-            <div className="border border-base-300 rounded-md pointer-events-auto join">
-              <button className={`join-item btn btn-xs ${dateMode==='today' ? 'btn-active' : ''}`} onClick={() => { setDateMode('today'); try{ localStorage.setItem('yahoo_date_mode','today'); }catch{} }}>Today</button>
-              <button className={`join-item btn btn-xs ${dateMode==='date' ? 'btn-active' : ''}`} onClick={() => { setDateMode('date'); try{ localStorage.setItem('yahoo_date_mode','date'); }catch{}; if (!date) setToday(); }}>Date</button>
+            {/* Date controls: always in date mode */}
+            <div className="pointer-events-auto join">
+              <button className="join-item btn btn-xs" aria-label="Next day" onClick={() => shiftDate(1)}>↑</button>
+              <input type="date" className="input-bordered join-item input input-xs" value={date} onChange={(e) => { setDate(e.target.value); try { localStorage.setItem('yahoo_date', e.target.value); } catch {}; }} />
+              <button className="join-item btn btn-xs" aria-label="Previous day" onClick={() => shiftDate(-1)}>↓</button>
+              <button className="join-item btn btn-xs" onClick={setToday}>Today</button>
             </div>
-            {dateMode === 'date' && (
-              <div className="pointer-events-auto join">
-                <button className="join-item btn btn-xs" aria-label="Next day" onClick={() => shiftDate(1)}>↑</button>
-                <input type="date" className="input-bordered join-item input input-xs" value={date} onChange={(e) => { setDate(e.target.value); try { localStorage.setItem('yahoo_date', e.target.value); } catch {}; }} />
-                <button className="join-item btn btn-xs" aria-label="Previous day" onClick={() => shiftDate(-1)}>↓</button>
-                <button className="join-item btn btn-xs" onClick={setToday}>Today</button>
-              </div>
-            )}
 
             <div className="border border-base-300 rounded-md pointer-events-auto join">
               <button className={`join-item btn btn-xs ${typeFilter==='all' ? 'btn-active' : ''}`} onClick={() => { setTypeFilter('all'); try{ localStorage.setItem('yahoo_type_filter','all'); }catch{} }}>All</button>

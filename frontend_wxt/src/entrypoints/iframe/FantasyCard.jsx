@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { LockClosedIcon, LockOpenIcon } from "@heroicons/react/24/solid";
+import { LockClosedIcon, LockOpenIcon, CalendarDaysIcon } from "@heroicons/react/24/solid";
 import { addPinnedItem, removePinnedItem, selectIsItemPinned } from "../store/pinnedSlice.js";
 
 export default function FantasyCard({ player, dateBadge }) {
@@ -31,6 +31,14 @@ export default function FantasyCard({ player, dateBadge }) {
     // Compact: avatar + name/team/pos + quick stats
     return (
       <div className="card bg-base-200 border border-base-300 h-14 relative">
+        {/* Date icon badge with tooltip */}
+        {dateBadge && (
+          <div className="tooltip tooltip-bottom absolute top-1 left-1 z-10" data-tip={dateBadge}>
+            <div className="badge badge-ghost badge-sm p-1">
+              <CalendarDaysIcon className="w-3.5 h-3.5" />
+            </div>
+          </div>
+        )}
         <div className="absolute top-1 right-1 opacity-0 hover:opacity-100 transition-opacity z-10"><PinButton size="size-6" /></div>
         <div className="card-body py-2 px-2 flex-row items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">

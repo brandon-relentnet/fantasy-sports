@@ -14,7 +14,7 @@ export default function useFantasyData() {
     try { return (localStorage.getItem('yahoo_show_extras') ?? 'true') === 'true'; } catch { return true; }
   });
   const [dateMode, setDateMode] = useState(() => {
-    try { return localStorage.getItem('yahoo_date_mode') || 'today'; } catch { return 'today'; }
+    try { return localStorage.getItem('yahoo_date_mode') || 'date'; } catch { return 'date'; }
   });
   const [date, setDate] = useState(() => {
     try { return localStorage.getItem('yahoo_date') || ''; } catch { return ''; }
@@ -59,7 +59,8 @@ export default function useFantasyData() {
       if (!enabled || !accessToken || !selectedTeam) return;
       setConnectionStatus('loading');
       try {
-        const q = dateMode === 'date' && date ? `?date=${encodeURIComponent(date)}` : '';
+        const effectiveDate = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : '';
+        const q = effectiveDate ? `?date=${encodeURIComponent(effectiveDate)}` : '';
         const res = await fetch(`${SPORTS_API}/team/${encodeURIComponent(selectedTeam)}/roster${q}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
