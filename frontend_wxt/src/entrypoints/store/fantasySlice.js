@@ -6,6 +6,10 @@ const fantasySlice = createSlice({
     enabled: true,
     sortKey: '',
     sortDir: 'desc',
+    dateMode: 'today',
+    date: '',
+    typeFilter: 'all',
+    showExtras: true,
   },
   reducers: {
     setFantasyEnabled: (state, action) => {
@@ -17,6 +21,20 @@ const fantasySlice = createSlice({
     setSortDir: (state, action) => {
       const v = action.payload;
       state.sortDir = v === 'asc' || v === 'desc' ? v : 'desc';
+    },
+    setDateMode: (state, action) => {
+      const v = action.payload;
+      state.dateMode = v === 'date' ? 'date' : 'today';
+    },
+    setDate: (state, action) => {
+      state.date = action.payload || '';
+    },
+    setTypeFilter: (state, action) => {
+      const v = action.payload;
+      state.typeFilter = v === 'batters' || v === 'pitchers' ? v : 'all';
+    },
+    setShowExtras: (state, action) => {
+      state.showExtras = !!action.payload;
     },
     setState: (state, action) => action.payload,
   },
@@ -30,5 +48,5 @@ const fantasySlice = createSlice({
   },
 });
 
-export const { setFantasyEnabled, setState } = fantasySlice.actions;
+export const { setFantasyEnabled, setSortKey, setSortDir, setDateMode, setDate, setTypeFilter, setShowExtras, setState } = fantasySlice.actions;
 export default fantasySlice.reducer;

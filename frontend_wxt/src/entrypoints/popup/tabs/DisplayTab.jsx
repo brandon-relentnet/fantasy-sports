@@ -6,7 +6,7 @@ import { useAuth } from "../../components/hooks/useAuth.tsx";
 import React, { useEffect, useMemo, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { setToggles } from "@/entrypoints/store/togglesSlice.js";
-import { setSortKey as setFantasySortKey, setSortDir as setFantasySortDir } from "@/entrypoints/store/fantasySlice.js";
+import { setSortKey as setFantasySortKey, setSortDir as setFantasySortDir, setDateMode as setFantasyDateMode, setDate as setFantasyDate, setTypeFilter as setFantasyTypeFilter, setShowExtras as setFantasyShowExtras } from "@/entrypoints/store/fantasySlice.js";
 import { API_ENDPOINTS } from "@/entrypoints/config/endpoints.js";
 
 function FantasyBaseballPanel() {
@@ -23,10 +23,10 @@ function FantasyBaseballPanel() {
   const [selectedLeague, setSelectedLeague] = useState("");
   const [selectedTeam, setSelectedTeam] = useState("");
   const [loading, setLoading] = useState(false);
-  const [dateMode, setDateMode] = useState("today");
-  const [date, setDate] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [showExtras, setShowExtras] = useState(true);
+  const dateMode = useSelector((s) => s.fantasy?.dateMode || 'today');
+  const date = useSelector((s) => s.fantasy?.date || '');
+  const typeFilter = useSelector((s) => s.fantasy?.typeFilter || 'all');
+  const showExtras = useSelector((s) => (s.fantasy?.showExtras ?? true));
   const sortKey = useSelector((s) => s.fantasy?.sortKey || '');
   const sortDir = useSelector((s) => s.fantasy?.sortDir || 'desc');
 
@@ -149,38 +149,22 @@ function FantasyBaseballPanel() {
     const base = new Date(Date.UTC(y, m - 1, d));
     base.setUTCDate(base.getUTCDate() + delta);
     const next = fmt(new Date(base.getUTCFullYear(), base.getUTCMonth(), base.getUTCDate()));
-    setDate(next);
+    dispatch(setFantasyDate(next));
     if (selectedTeam) {
-      setDateMode("date");
+      dispatch(setFantasyDateMode('date'));
       setTimeout(() => refreshRoster(), 0);
     }
   }
   function setToday() {
     const now = new Date();
-    setDate(fmt(now));
+    dispatch(setFantasyDate(fmt(now)));
     if (selectedTeam) {
-      setDateMode("date");
+      dispatch(setFantasyDateMode('date'));
       setTimeout(() => refreshRoster(), 0);
     }
   }
 
-  // Persist filters for iframe carousel to use
-  useEffect(() => {
-    try { localStorage.setItem('yahoo_filter_type', typeFilter); } catch {}
-    try { window.dispatchEvent(new StorageEvent('storage', { key: 'yahoo_filter_type', newValue: typeFilter })); } catch {}
-  }, [typeFilter]);
-  useEffect(() => {
-    try { localStorage.setItem('yahoo_filter_showExtras', String(showExtras)); } catch {}
-    try { window.dispatchEvent(new StorageEvent('storage', { key: 'yahoo_filter_showExtras', newValue: String(showExtras) })); } catch {}
-  }, [showExtras]);
-  useEffect(() => {
-    try { localStorage.setItem('yahoo_date_mode', dateMode); } catch {}
-    try { window.dispatchEvent(new StorageEvent('storage', { key: 'yahoo_date_mode', newValue: dateMode })); } catch {}
-  }, [dateMode]);
-  useEffect(() => {
-    try { localStorage.setItem('yahoo_date', date); } catch {}
-    try { window.dispatchEvent(new StorageEvent('storage', { key: 'yahoo_date', newValue: date })); } catch {}
-  }, [date]);
+  // Filters persisted via Redux proxy store (no localStorage needed)
   // sorting now persisted in Redux via proxy store (no localStorage needed)
 
   async function chooseTeam(teamKey) {
@@ -263,10 +247,10 @@ function FantasyBaseballPanel() {
               />
               <span className="label-text">Enable Yahoo Fantasy</span>
             </label>
-            <div className="border border-base-300 rounded-md join">
-              <button className={`join-item btn btn-xs ${dateMode==='today' ? 'btn-active' : ''}`} onClick={() => setDateMode('today')}>Today</button>
-              <button className={`join-item btn btn-xs ${dateMode==='date' ? 'btn-active' : ''}`} onClick={() => { setDateMode('date'); if (!date) setToday(); }}>Date</button>
-            </div>
+                <div className="border border-base-300 rounded-md join">
+                  <button className={`join-item btn btn-xs ${dateMode==='today' ? 'btn-active' : ''}`} onClick={() => dispatch(setFantasyDateMode('today'))}>Today</button>
+                  <button className={`join-item btn btn-xs ${dateMode==='date' ? 'btn-active' : ''}`} onClick={() => { dispatch(setFantasyDateMode('date')); if (!date) setToday(); }}>Date</button>
+                </div>
             {dateMode === 'date' && (
               <div className="join">
                 <button className="join-item btn btn-xs" aria-label="Next day" onClick={() => shiftDate(1)}>↑</button>
@@ -276,15 +260,15 @@ function FantasyBaseballPanel() {
               </div>
             )}
 
-            <div className="border border-base-300 rounded-md join">
-              <button className={`join-item btn btn-xs ${typeFilter==='all' ? 'btn-active' : ''}`} onClick={() => setTypeFilter('all')}>All</button>
-              <button className={`join-item btn btn-xs ${typeFilter==='batters' ? 'btn-active' : ''}`} onClick={() => setTypeFilter('batters')}>Batters</button>
-              <button className={`join-item btn btn-xs ${typeFilter==='pitchers' ? 'btn-active' : ''}`} onClick={() => setTypeFilter('pitchers')}>Pitchers</button>
-            </div>
-            <label className="gap-2 cursor-pointer label">
-              <input type="checkbox" className="checkbox checkbox-xs" checked={showExtras} onChange={(e) => setShowExtras(e.target.checked)} />
-              <span className="label-text">Show Bench & IL</span>
-            </label>
+                <div className="border border-base-300 rounded-md join">
+                  <button className={`join-item btn btn-xs ${typeFilter==='all' ? 'btn-active' : ''}`} onClick={() => dispatch(setFantasyTypeFilter('all'))}>All</button>
+                  <button className={`join-item btn btn-xs ${typeFilter==='batters' ? 'btn-active' : ''}`} onClick={() => dispatch(setFantasyTypeFilter('batters'))}>Batters</button>
+                  <button className={`join-item btn btn-xs ${typeFilter==='pitchers' ? 'btn-active' : ''}`} onClick={() => dispatch(setFantasyTypeFilter('pitchers'))}>Pitchers</button>
+                </div>
+                <label className="gap-2 cursor-pointer label">
+                  <input type="checkbox" className="checkbox checkbox-xs" checked={showExtras} onChange={(e) => dispatch(setFantasyShowExtras(e.target.checked))} />
+                  <span className="label-text">Show Bench & IL</span>
+                </label>
 
             {/* Sorting Controls */}
                 <div className="border border-base-300 rounded-md join">

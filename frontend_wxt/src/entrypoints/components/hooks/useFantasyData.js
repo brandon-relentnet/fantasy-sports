@@ -6,10 +6,10 @@ export default function useFantasyData() {
   const SPORTS_API = 'http://localhost:4000';
   const [roster, setRoster] = useState([]);
   const [connectionStatus, setConnectionStatus] = useState('idle'); // idle | loading | ok | error
-  const [filterType, setFilterType] = useState('all'); // all | batters | pitchers
-  const [showExtras, setShowExtras] = useState(true); // bench + IL
-  const [dateMode, setDateMode] = useState('today'); // today | date
-  const [date, setDate] = useState(''); // YYYY-MM-DD
+  const filterType = useSelector((state) => state.fantasy?.typeFilter || 'all');
+  const showExtras = useSelector((state) => (state.fantasy?.showExtras ?? true));
+  const dateMode = useSelector((state) => state.fantasy?.dateMode || 'today');
+  const date = useSelector((state) => state.fantasy?.date || '');
   const sortKey = useSelector((state) => state.fantasy?.sortKey || '');
   const sortDir = useSelector((state) => state.fantasy?.sortDir || 'desc');
   const [accessToken, setAccessToken] = useState(() => {
@@ -21,33 +21,10 @@ export default function useFantasyData() {
   const enabled = useSelector((state) => (state.toggles?.YAHOO_FANTASY ?? true));
 
   useEffect(() => {
-    // load filters from popup
-    try {
-      const t = localStorage.getItem('yahoo_filter_type');
-      const s = localStorage.getItem('yahoo_filter_showExtras');
-      const dm = localStorage.getItem('yahoo_date_mode');
-      const d = localStorage.getItem('yahoo_date');
-      if (t === 'all' || t === 'batters' || t === 'pitchers') setFilterType(t);
-      if (s === 'true' || s === 'false') setShowExtras(s === 'true');
-      if (dm === 'today' || dm === 'date') setDateMode(dm);
-      if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) setDate(d);
-    } catch {}
-
+    // Listen only for token/team changes from popup
     const onStorage = (e) => {
       if (e.key === 'yahoo_access_token') setAccessToken(e.newValue || '');
       if (e.key === 'yahoo_selected_team') setSelectedTeam(e.newValue || '');
-      if (e.key === 'yahoo_filter_type' && (e.newValue === 'all' || e.newValue === 'batters' || e.newValue === 'pitchers')) {
-        setFilterType(e.newValue);
-      }
-      if (e.key === 'yahoo_filter_showExtras' && (e.newValue === 'true' || e.newValue === 'false')) {
-        setShowExtras(e.newValue === 'true');
-      }
-      if (e.key === 'yahoo_date_mode' && (e.newValue === 'today' || e.newValue === 'date')) {
-        setDateMode(e.newValue);
-      }
-      if (e.key === 'yahoo_date' && e.newValue && /^\d{4}-\d{2}-\d{2}$/.test(e.newValue)) {
-        setDate(e.newValue);
-      }
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
