@@ -1,9 +1,18 @@
+import path from 'path';
+import dotenv from 'dotenv';
+// Load .env from backend dir and also support root fallbacks
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 import express, { Request, Response } from 'express';
+import fs from 'fs';
+import https from 'https';
 import cors from 'cors';
 import { YahooFantasyAPI } from './lib/yahooApi';
 
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = Number(process.env.PORT) || 4000;
+const TLS_PORT = Number(process.env.PORT_TLS) || 4443;
 // For development/testing: allow all origins. Switch to an allowlist for production.
 app.use(cors({
   origin: true,
@@ -28,6 +37,82 @@ app.get('/leagues', async (req: Request, res: Response) => {
   const api = new YahooFantasyAPI(token);
   try { const leagues = await api.getUserLeagues(); res.json({ leagues }); }
   catch { res.status(500).json({ error: 'Failed to fetch leagues' }); }
+});
+
+// Yahoo OAuth: start -> redirect to Yahoo auth
+app.get('/auth/yahoo/start', (req: Request, res: Response) => {
+  const clientId = process.env.YAHOO_CLIENT_ID;
+  const redirectUri = process.env.YAHOO_REDIRECT_URI || `http://localhost:${PORT}/auth/yahoo/callback`;
+  if (!clientId) return res.status(500).send('Yahoo client ID not configured');
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    response_type: 'code',
+    language: 'en-us',
+    scope: 'fspt-r',
+  });
+  const url = `https://api.login.yahoo.com/oauth2/request_auth?${params.toString()}`;
+  res.redirect(url);
+});
+
+// Yahoo OAuth: callback -> exchange code and postMessage token to opener
+app.get('/auth/yahoo/callback', async (req: Request, res: Response) => {
+  try {
+    const code = (req.query.code as string) || '';
+    const clientId = process.env.YAHOO_CLIENT_ID!;
+    const clientSecret = process.env.YAHOO_CLIENT_SECRET!;
+    const redirectUri = process.env.YAHOO_REDIRECT_URI || `http://localhost:${PORT}/auth/yahoo/callback`;
+    if (!clientId || !clientSecret) return res.status(500).send('Yahoo credentials not configured');
+    const authHeader = Buffer.from(`${clientId}:${clientSecret}`, 'binary').toString('base64');
+    const body = new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      redirect_uri: redirectUri,
+      code,
+      grant_type: 'authorization_code',
+    });
+    const tokenRes = await fetch('https://api.login.yahoo.com/oauth2/get_token', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${authHeader}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json',
+        'User-Agent': 'Mozilla/5.0',
+      },
+      body: body.toString(),
+    } as any);
+    const text = await tokenRes.text();
+    if (!tokenRes.ok) {
+      console.error('Yahoo token exchange failed', tokenRes.status, text);
+      return res.status(500).send(`Token exchange failed (${tokenRes.status}): ${text}`);
+    }
+    let tokens: any; try { tokens = JSON.parse(text); } catch { return res.status(500).send('Invalid token response'); }
+    const accessToken = tokens.access_token;
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Yahoo Auth Complete</title></head>
+      <body style="font-family: ui-sans-serif, system-ui;">
+        <script>
+          (function(){
+            try{ if (window.opener) { window.opener.postMessage({ type: 'yahoo-auth', accessToken: ${JSON.stringify(accessToken)} }, '*'); } }
+            catch(e){}
+            setTimeout(function(){ window.close(); }, 100);
+          })();
+        </script>
+        <p>You can close this window.</p>
+      </body></html>`;
+    res.setHeader('Content-Type', 'text/html').send(html);
+  } catch (e: any) {
+    console.error('Auth callback error', e);
+    res.status(500).send('Auth callback error');
+  }
+});
+
+// Debug endpoint to verify Yahoo OAuth env wiring (no secrets exposed)
+app.get('/auth/yahoo/config', (_req: Request, res: Response) => {
+  res.json({
+    hasClientId: !!process.env.YAHOO_CLIENT_ID,
+    hasClientSecret: !!process.env.YAHOO_CLIENT_SECRET,
+    redirectUri: process.env.YAHOO_REDIRECT_URI || `http://localhost:${PORT}/auth/yahoo/callback`,
+  });
 });
 
 app.get('/league/:leagueKey', async (req: Request, res: Response) => {
@@ -95,4 +180,37 @@ app.get('/team/:teamKey/test-endpoints', async (req: Request, res: Response) => 
 
 app.listen(PORT, () => {
   console.log(`Backend listening on http://localhost:${PORT}`);
+});
+
+// Optionally also start HTTPS for OAuth callbacks if certs exist
+try {
+  const candidates = [
+    path.resolve(__dirname, '..', '..', 'certificates'),          // repo root /certificates
+    path.resolve(__dirname, '..', 'certificates'),                 // backend/certificates
+    path.resolve(__dirname, '..', '..', 'frontend', 'certificates')// frontend/certificates
+  ];
+  console.log('HTTPS cert search paths:', candidates);
+  let keyPath: string | null = null;
+  let certPath: string | null = null;
+  for (const dir of candidates) {
+    const k = path.join(dir, 'localhost.key');
+    const c = path.join(dir, 'localhost.crt');
+    if (fs.existsSync(k) && fs.existsSync(c)) { keyPath = k; certPath = c; break; }
+  }
+  if (keyPath && certPath) {
+    const httpsOptions = { key: fs.readFileSync(keyPath), cert: fs.readFileSync(certPath) };
+    https.createServer(httpsOptions, app).listen(TLS_PORT, () => {
+      console.log(`Backend HTTPS listening on https://localhost:${TLS_PORT} (certs: ${path.dirname(keyPath!)})`);
+    });
+  } else {
+    console.log('HTTPS certificates not found in any known location; set YAHOO_REDIRECT_URI to http and register it in Yahoo dev, or add certs.');
+  }
+} catch (e) {
+  console.warn('Failed to start HTTPS server:', e);
+}
+
+// Simple health and callback test endpoints
+app.get('/health', (_req: Request, res: Response) => res.json({ ok: true }));
+app.get('/auth/yahoo/callback/test', (_req: Request, res: Response) => {
+  res.setHeader('Content-Type', 'text/html').send('<!doctype html><html><body>Callback reachable.</body></html>');
 });
