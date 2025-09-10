@@ -216,7 +216,7 @@ function FantasyBaseballPanel() {
   return (
     <div className="space-y-3">
       {/* Header controls */}
-      <div className="flex flex-wrap items-center gap-2 relative z-10">
+      <div className="flex flex-wrap items-center gap-2 relative z-50 pointer-events-auto">
         {/* Access token */}
         {step === 'signin' && (
           <div className="flex items-center gap-2 w-full">
