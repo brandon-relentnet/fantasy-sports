@@ -14,6 +14,13 @@ function FantasyBaseballPanel() {
   const [enabledLocal, setEnabledLocal] = useState(() => {
     try { return (localStorage.getItem('yahoo_enabled') ?? 'true') === 'true'; } catch { return true; }
   });
+  // On mount, ensure Redux reflects persisted enable flag
+  useEffect(() => {
+    try {
+      const v = (localStorage.getItem('yahoo_enabled') ?? 'true') === 'true';
+      dispatch(setFantasyEnabled(v));
+    } catch {}
+  }, [dispatch]);
   useEffect(() => {
     // keep local toggle in sync with redux (e.g., on initial load)
     setEnabledLocal(!!fantasyEnabled);
@@ -33,6 +40,17 @@ function FantasyBaseballPanel() {
   const [showExtras, setShowExtras] = useState(true);
   const [sortKey, setSortKey] = useState(() => { try { return localStorage.getItem('yahoo_sort') || ''; } catch { return ''; } });
   const [sortDir, setSortDir] = useState(() => { try { return localStorage.getItem('yahoo_sort_dir') || 'desc'; } catch { return 'desc'; } });
+
+  // Default sort per type: batters -> HR, pitchers -> K
+  useEffect(() => {
+    const batterKeys = ['HR','RBI','R','H','SB','AVG','OPS'];
+    const pitcherKeys = ['K','W','SV','IP','ERA','WHIP'];
+    if (typeFilter === 'batters') {
+      if (!sortKey || pitcherKeys.includes(sortKey)) setSortKey('HR');
+    } else if (typeFilter === 'pitchers') {
+      if (!sortKey || batterKeys.includes(sortKey)) setSortKey('K');
+    }
+  }, [typeFilter, sortKey]);
 
   // Load saved token + selections + date on mount
   useEffect(() => {
