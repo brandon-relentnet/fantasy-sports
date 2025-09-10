@@ -6,7 +6,7 @@ import { useAuth } from "../../components/hooks/useAuth.tsx";
 import React, { useEffect, useMemo, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { setToggles } from "@/entrypoints/store/togglesSlice.js";
-import { setSortKey as setFantasySortKey, setSortDir as setFantasySortDir, setDateMode as setFantasyDateMode, setDate as setFantasyDate, setTypeFilter as setFantasyTypeFilter, setShowExtras as setFantasyShowExtras } from "@/entrypoints/store/fantasySlice.js";
+// We will use local state + localStorage for fantasy filters; keep Redux only for enabled toggle
 import { API_ENDPOINTS } from "@/entrypoints/config/endpoints.js";
  
 
@@ -24,23 +24,24 @@ function FantasyBaseballPanel() {
   const [selectedLeague, setSelectedLeague] = useState("");
   const [selectedTeam, setSelectedTeam] = useState("");
   const [loading, setLoading] = useState(false);
-  const dateMode = useSelector((s) => s.fantasy?.dateMode || 'today');
-  const date = useSelector((s) => s.fantasy?.date || '');
-  const typeFilter = useSelector((s) => s.fantasy?.typeFilter || 'all');
-  const showExtras = useSelector((s) => (s.fantasy?.showExtras ?? true));
-  const sortKey = useSelector((s) => s.fantasy?.sortKey || '');
-  const sortDir = useSelector((s) => s.fantasy?.sortDir || 'desc');
+  // Local filter states (persist to localStorage)
+  const [dateMode, setDateMode] = useState('today');
+  const [date, setDate] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [showExtras, setShowExtras] = useState(true);
+  const [sortKey, setSortKey] = useState('');
+  const [sortDir, setSortDir] = useState('desc');
 
   // Default sort per type: batters -> HR, pitchers -> K
   useEffect(() => {
     const batterKeys = ['HR','RBI','R','H','SB','AVG','OPS'];
     const pitcherKeys = ['K','W','SV','IP','ERA','WHIP'];
     if (typeFilter === 'batters') {
-      if (!sortKey || pitcherKeys.includes(sortKey)) dispatch(setFantasySortKey('HR'));
+      if (!sortKey || pitcherKeys.includes(sortKey)) setSortKey('HR');
     } else if (typeFilter === 'pitchers') {
-      if (!sortKey || batterKeys.includes(sortKey)) dispatch(setFantasySortKey('K'));
+      if (!sortKey || batterKeys.includes(sortKey)) setSortKey('K');
     }
-  }, [typeFilter, sortKey, dispatch]);
+  }, [typeFilter, sortKey]);
 
   // Load saved token + selections + date on mount
   useEffect(() => {
@@ -50,14 +51,22 @@ function FantasyBaseballPanel() {
       const savedTeam = localStorage.getItem('yahoo_selected_team');
       const savedMode = localStorage.getItem('yahoo_date_mode');
       const savedDate = localStorage.getItem('yahoo_date');
+      const savedType = localStorage.getItem('yahoo_type_filter');
+      const savedExtras = localStorage.getItem('yahoo_show_extras');
+      const savedSortKey = localStorage.getItem('yahoo_sort_key');
+      const savedSortDir = localStorage.getItem('yahoo_sort_dir');
       if (saved) {
         setAccessToken(saved);
         setStep('league');
       }
       if (savedLeague) setSelectedLeague(savedLeague);
       if (savedTeam) setSelectedTeam(savedTeam);
-      if (savedMode === 'today' || savedMode === 'date') dispatch(setFantasyDateMode(savedMode));
-      if (savedDate && /^\d{4}-\d{2}-\d{2}$/.test(savedDate)) dispatch(setFantasyDate(savedDate));
+      if (savedMode === 'today' || savedMode === 'date') setDateMode(savedMode);
+      if (savedDate && /^\d{4}-\d{2}-\d{2}$/.test(savedDate)) setDate(savedDate);
+      if (savedType === 'batters' || savedType === 'pitchers' || savedType === 'all') setTypeFilter(savedType);
+      if (savedExtras != null) setShowExtras(savedExtras === 'true');
+      if (savedSortKey) setSortKey(savedSortKey);
+      if (savedSortDir === 'asc' || savedSortDir === 'desc') setSortDir(savedSortDir);
     } catch {}
   }, []);
 
@@ -147,17 +156,22 @@ function FantasyBaseballPanel() {
     const base = new Date(Date.UTC(y, m - 1, d));
     base.setUTCDate(base.getUTCDate() + delta);
     const next = fmt(new Date(base.getUTCFullYear(), base.getUTCMonth(), base.getUTCDate()));
-    dispatch(setFantasyDate(next));
+    setDate(next);
+    try { localStorage.setItem('yahoo_date', next); } catch {}
     if (selectedTeam) {
-      dispatch(setFantasyDateMode('date'));
+      setDateMode('date');
+      try { localStorage.setItem('yahoo_date_mode', 'date'); } catch {}
       setTimeout(() => refreshRoster(), 0);
     }
   }
   function setToday() {
     const now = new Date();
-    dispatch(setFantasyDate(fmt(now)));
+    const today = fmt(now);
+    setDate(today);
+    try { localStorage.setItem('yahoo_date', today); } catch {}
     if (selectedTeam) {
-      dispatch(setFantasyDateMode('date'));
+      setDateMode('date');
+      try { localStorage.setItem('yahoo_date_mode', 'date'); } catch {}
       setTimeout(() => refreshRoster(), 0);
     }
   }
@@ -226,31 +240,31 @@ function FantasyBaseballPanel() {
               <span className="label-text">Enable Yahoo Fantasy</span>
             </label>
                 <div className="border border-base-300 rounded-md join pointer-events-auto">
-                  <button className={`join-item btn btn-xs ${dateMode==='today' ? 'btn-active' : ''}`} onClick={() => dispatch(setFantasyDateMode('today'))}>Today</button>
-                  <button className={`join-item btn btn-xs ${dateMode==='date' ? 'btn-active' : ''}`} onClick={() => { dispatch(setFantasyDateMode('date')); if (!date) setToday(); }}>Date</button>
+                  <button className={`join-item btn btn-xs ${dateMode==='today' ? 'btn-active' : ''}`} onClick={() => { setDateMode('today'); try{ localStorage.setItem('yahoo_date_mode','today'); }catch{} }}>Today</button>
+                  <button className={`join-item btn btn-xs ${dateMode==='date' ? 'btn-active' : ''}`} onClick={() => { setDateMode('date'); try{ localStorage.setItem('yahoo_date_mode','date'); }catch{}; if (!date) setToday(); }}>Date</button>
                 </div>
             {dateMode === 'date' && (
               <div className="join pointer-events-auto">
                 <button className="join-item btn btn-xs" aria-label="Next day" onClick={() => shiftDate(1)}>↑</button>
-                <input type="date" className="input-bordered join-item input input-xs" value={date} onChange={(e) => { dispatch(setFantasyDate(e.target.value)); }} />
+                <input type="date" className="input-bordered join-item input input-xs" value={date} onChange={(e) => { setDate(e.target.value); try { localStorage.setItem('yahoo_date', e.target.value); } catch {}; }} />
                 <button className="join-item btn btn-xs" aria-label="Previous day" onClick={() => shiftDate(-1)}>↓</button>
                 <button className="join-item btn btn-xs" onClick={setToday}>Today</button>
               </div>
             )}
 
                 <div className="border border-base-300 rounded-md join pointer-events-auto">
-                  <button className={`join-item btn btn-xs ${typeFilter==='all' ? 'btn-active' : ''}`} onClick={() => dispatch(setFantasyTypeFilter('all'))}>All</button>
-                  <button className={`join-item btn btn-xs ${typeFilter==='batters' ? 'btn-active' : ''}`} onClick={() => dispatch(setFantasyTypeFilter('batters'))}>Batters</button>
-                  <button className={`join-item btn btn-xs ${typeFilter==='pitchers' ? 'btn-active' : ''}`} onClick={() => dispatch(setFantasyTypeFilter('pitchers'))}>Pitchers</button>
+                  <button className={`join-item btn btn-xs ${typeFilter==='all' ? 'btn-active' : ''}`} onClick={() => { setTypeFilter('all'); try{ localStorage.setItem('yahoo_type_filter','all'); }catch{} }}>All</button>
+                  <button className={`join-item btn btn-xs ${typeFilter==='batters' ? 'btn-active' : ''}`} onClick={() => { setTypeFilter('batters'); try{ localStorage.setItem('yahoo_type_filter','batters'); }catch{} }}>Batters</button>
+                  <button className={`join-item btn btn-xs ${typeFilter==='pitchers' ? 'btn-active' : ''}`} onClick={() => { setTypeFilter('pitchers'); try{ localStorage.setItem('yahoo_type_filter','pitchers'); }catch{} }}>Pitchers</button>
                 </div>
                 <label className="gap-2 cursor-pointer label pointer-events-auto">
-                  <input type="checkbox" className="checkbox checkbox-xs" checked={showExtras} onChange={(e) => dispatch(setFantasyShowExtras(e.target.checked))} />
+                  <input type="checkbox" className="checkbox checkbox-xs" checked={showExtras} onChange={(e) => { setShowExtras(e.target.checked); try{ localStorage.setItem('yahoo_show_extras', String(e.target.checked)); }catch{} }} />
                   <span className="label-text">Show Bench & IL</span>
                 </label>
 
             {/* Sorting Controls */}
                 <div className="border border-base-300 rounded-md join pointer-events-auto">
-                  <select className="join-item select select-xs" value={sortKey} onChange={(e) => dispatch(setFantasySortKey(e.target.value))}>
+                  <select className="join-item select select-xs" value={sortKey} onChange={(e) => { setSortKey(e.target.value); try{ localStorage.setItem('yahoo_sort_key', e.target.value); }catch{} }}>
                     <option value="">Sort: None</option>
                 <optgroup label="Batters">
                   <option value="HR">HR</option>
@@ -270,7 +284,7 @@ function FantasyBaseballPanel() {
                   <option value="WHIP">WHIP</option>
                 </optgroup>
               </select>
-                  <select className="join-item select select-xs" value={sortDir} onChange={(e) => dispatch(setFantasySortDir(e.target.value))}>
+                  <select className="join-item select select-xs" value={sortDir} onChange={(e) => { const v = e.target.value === 'asc' ? 'asc' : 'desc'; setSortDir(v); try{ localStorage.setItem('yahoo_sort_dir', v); }catch{} }}>
                     <option value="desc">Desc</option>
                     <option value="asc">Asc</option>
                   </select>

@@ -6,25 +6,46 @@ export default function useFantasyData() {
   const SPORTS_API = 'http://localhost:4000';
   const [roster, setRoster] = useState([]);
   const [connectionStatus, setConnectionStatus] = useState('idle'); // idle | loading | ok | error
-  const filterType = useSelector((state) => state.fantasy?.typeFilter || 'all');
-  const showExtras = useSelector((state) => (state.fantasy?.showExtras ?? true));
-  const dateMode = useSelector((state) => state.fantasy?.dateMode || 'today');
-  const date = useSelector((state) => state.fantasy?.date || '');
-  const sortKey = useSelector((state) => state.fantasy?.sortKey || '');
-  const sortDir = useSelector((state) => state.fantasy?.sortDir || 'desc');
+  // Filters from localStorage
+  const [filterType, setFilterType] = useState(() => {
+    try { return localStorage.getItem('yahoo_type_filter') || 'all'; } catch { return 'all'; }
+  });
+  const [showExtras, setShowExtras] = useState(() => {
+    try { return (localStorage.getItem('yahoo_show_extras') ?? 'true') === 'true'; } catch { return true; }
+  });
+  const [dateMode, setDateMode] = useState(() => {
+    try { return localStorage.getItem('yahoo_date_mode') || 'today'; } catch { return 'today'; }
+  });
+  const [date, setDate] = useState(() => {
+    try { return localStorage.getItem('yahoo_date') || ''; } catch { return ''; }
+  });
+  const [sortKey, setSortKey] = useState(() => {
+    try { return localStorage.getItem('yahoo_sort_key') || ''; } catch { return ''; }
+  });
+  const [sortDir, setSortDir] = useState(() => {
+    try { return localStorage.getItem('yahoo_sort_dir') || 'desc'; } catch { return 'desc'; }
+  });
+  // Token/team from localStorage
   const [accessToken, setAccessToken] = useState(() => {
     try { return localStorage.getItem('yahoo_access_token') || ''; } catch { return ''; }
   });
   const [selectedTeam, setSelectedTeam] = useState(() => {
     try { return localStorage.getItem('yahoo_selected_team') || ''; } catch { return ''; }
   });
+  // Keep enable toggle in Redux (works fine)
   const enabled = useSelector((state) => (state.toggles?.YAHOO_FANTASY ?? true));
 
-  // Listen only for token/team changes from popup
+  // Listen for storage changes from popup (token/team + filters)
   useEffect(() => {
     const onStorage = (e) => {
       if (e.key === 'yahoo_access_token') setAccessToken(e.newValue || '');
       if (e.key === 'yahoo_selected_team') setSelectedTeam(e.newValue || '');
+      if (e.key === 'yahoo_type_filter') setFilterType(e.newValue || 'all');
+      if (e.key === 'yahoo_show_extras') setShowExtras((e.newValue ?? 'true') === 'true');
+      if (e.key === 'yahoo_date_mode') setDateMode(e.newValue || 'today');
+      if (e.key === 'yahoo_date') setDate(e.newValue || '');
+      if (e.key === 'yahoo_sort_key') setSortKey(e.newValue || '');
+      if (e.key === 'yahoo_sort_dir') setSortDir(e.newValue || 'desc');
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
