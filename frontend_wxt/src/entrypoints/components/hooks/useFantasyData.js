@@ -10,8 +10,8 @@ export default function useFantasyData() {
   const [showExtras, setShowExtras] = useState(true); // bench + IL
   const [dateMode, setDateMode] = useState('today'); // today | date
   const [date, setDate] = useState(''); // YYYY-MM-DD
-  const [sortKey, setSortKey] = useState(() => { try { return localStorage.getItem('yahoo_sort') || ''; } catch { return ''; } });
-  const [sortDir, setSortDir] = useState(() => { try { return localStorage.getItem('yahoo_sort_dir') || 'desc'; } catch { return 'desc'; } });
+  const sortKey = useSelector((state) => state.fantasy?.sortKey || '');
+  const sortDir = useSelector((state) => state.fantasy?.sortDir || 'desc');
   const [accessToken, setAccessToken] = useState(() => {
     try { return localStorage.getItem('yahoo_access_token') || ''; } catch { return ''; }
   });
@@ -27,14 +27,10 @@ export default function useFantasyData() {
       const s = localStorage.getItem('yahoo_filter_showExtras');
       const dm = localStorage.getItem('yahoo_date_mode');
       const d = localStorage.getItem('yahoo_date');
-      const sk = localStorage.getItem('yahoo_sort');
-      const sd = localStorage.getItem('yahoo_sort_dir');
       if (t === 'all' || t === 'batters' || t === 'pitchers') setFilterType(t);
       if (s === 'true' || s === 'false') setShowExtras(s === 'true');
       if (dm === 'today' || dm === 'date') setDateMode(dm);
       if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) setDate(d);
-      if (sk) setSortKey(sk);
-      if (sd === 'asc' || sd === 'desc') setSortDir(sd);
     } catch {}
 
     const onStorage = (e) => {
@@ -52,8 +48,6 @@ export default function useFantasyData() {
       if (e.key === 'yahoo_date' && e.newValue && /^\d{4}-\d{2}-\d{2}$/.test(e.newValue)) {
         setDate(e.newValue);
       }
-      if (e.key === 'yahoo_sort') setSortKey(e.newValue || '');
-      if (e.key === 'yahoo_sort_dir' && (e.newValue === 'asc' || e.newValue === 'desc')) setSortDir(e.newValue);
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
@@ -84,7 +78,7 @@ export default function useFantasyData() {
     }
     load();
     return () => { cancelled = true; };
-  }, [SPORTS_API, accessToken, selectedTeam, dateMode, date]);
+  }, [SPORTS_API, accessToken, selectedTeam, dateMode, date, enabled]);
 
   const filteredRoster = useMemo(() => {
     if (!enabled) return [];
@@ -126,7 +120,7 @@ export default function useFantasyData() {
       return va > vb ? -1 : 1;
     });
     return sorted;
-  }, [roster, filterType, showExtras, sortKey, sortDir]);
+  }, [roster, filterType, showExtras, sortKey, sortDir, enabled]);
 
   return {
     roster: filteredRoster,

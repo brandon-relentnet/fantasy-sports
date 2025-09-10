@@ -6,6 +6,7 @@ import { useAuth } from "../../components/hooks/useAuth.tsx";
 import React, { useEffect, useMemo, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { setToggles } from "@/entrypoints/store/togglesSlice.js";
+import { setSortKey as setFantasySortKey, setSortDir as setFantasySortDir } from "@/entrypoints/store/fantasySlice.js";
 import { API_ENDPOINTS } from "@/entrypoints/config/endpoints.js";
 
 function FantasyBaseballPanel() {
@@ -26,19 +27,19 @@ function FantasyBaseballPanel() {
   const [date, setDate] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [showExtras, setShowExtras] = useState(true);
-  const [sortKey, setSortKey] = useState(() => { try { return localStorage.getItem('yahoo_sort') || ''; } catch { return ''; } });
-  const [sortDir, setSortDir] = useState(() => { try { return localStorage.getItem('yahoo_sort_dir') || 'desc'; } catch { return 'desc'; } });
+  const sortKey = useSelector((s) => s.fantasy?.sortKey || '');
+  const sortDir = useSelector((s) => s.fantasy?.sortDir || 'desc');
 
   // Default sort per type: batters -> HR, pitchers -> K
   useEffect(() => {
     const batterKeys = ['HR','RBI','R','H','SB','AVG','OPS'];
     const pitcherKeys = ['K','W','SV','IP','ERA','WHIP'];
     if (typeFilter === 'batters') {
-      if (!sortKey || pitcherKeys.includes(sortKey)) setSortKey('HR');
+      if (!sortKey || pitcherKeys.includes(sortKey)) dispatch(setFantasySortKey('HR'));
     } else if (typeFilter === 'pitchers') {
-      if (!sortKey || batterKeys.includes(sortKey)) setSortKey('K');
+      if (!sortKey || batterKeys.includes(sortKey)) dispatch(setFantasySortKey('K'));
     }
-  }, [typeFilter, sortKey]);
+  }, [typeFilter, sortKey, dispatch]);
 
   // Load saved token + selections + date on mount
   useEffect(() => {
@@ -180,14 +181,7 @@ function FantasyBaseballPanel() {
     try { localStorage.setItem('yahoo_date', date); } catch {}
     try { window.dispatchEvent(new StorageEvent('storage', { key: 'yahoo_date', newValue: date })); } catch {}
   }, [date]);
-  useEffect(() => {
-    try { localStorage.setItem('yahoo_sort', sortKey); } catch {}
-    try { window.dispatchEvent(new StorageEvent('storage', { key: 'yahoo_sort', newValue: sortKey })); } catch {}
-  }, [sortKey]);
-  useEffect(() => {
-    try { localStorage.setItem('yahoo_sort_dir', sortDir); } catch {}
-    try { window.dispatchEvent(new StorageEvent('storage', { key: 'yahoo_sort_dir', newValue: sortDir })); } catch {}
-  }, [sortDir]);
+  // sorting now persisted in Redux via proxy store (no localStorage needed)
 
   async function chooseTeam(teamKey) {
     setSelectedTeam(teamKey);
@@ -293,9 +287,9 @@ function FantasyBaseballPanel() {
             </label>
 
             {/* Sorting Controls */}
-            <div className="border border-base-300 rounded-md join">
-              <select className="join-item select select-xs" value={sortKey} onChange={(e) => setSortKey(e.target.value)}>
-                <option value="">Sort: None</option>
+                <div className="border border-base-300 rounded-md join">
+                  <select className="join-item select select-xs" value={sortKey} onChange={(e) => dispatch(setFantasySortKey(e.target.value))}>
+                    <option value="">Sort: None</option>
                 <optgroup label="Batters">
                   <option value="HR">HR</option>
                   <option value="RBI">RBI</option>
@@ -314,11 +308,11 @@ function FantasyBaseballPanel() {
                   <option value="WHIP">WHIP</option>
                 </optgroup>
               </select>
-              <select className="join-item select select-xs" value={sortDir} onChange={(e) => setSortDir(e.target.value)}>
-                <option value="desc">Desc</option>
-                <option value="asc">Asc</option>
-              </select>
-            </div>
+                  <select className="join-item select select-xs" value={sortDir} onChange={(e) => dispatch(setFantasySortDir(e.target.value))}>
+                    <option value="desc">Desc</option>
+                    <option value="asc">Asc</option>
+                  </select>
+                </div>
             {/* Auto updates; no Apply button needed */}
           </>
         )}
