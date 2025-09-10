@@ -78,6 +78,7 @@ function FantasyBaseballPanel() {
 
   async function chooseLeague(leagueKey) {
     setSelectedLeague(leagueKey);
+    try { localStorage.setItem('yahoo_selected_league', leagueKey); } catch {}
     setSelectedTeam("");
     setRoster([]);
     setLoading(true);
@@ -121,6 +122,7 @@ function FantasyBaseballPanel() {
 
   async function chooseTeam(teamKey) {
     setSelectedTeam(teamKey);
+    try { localStorage.setItem('yahoo_selected_team', teamKey); } catch {}
     setLoading(true);
     try {
       const query = dateMode === "date" && date ? `?date=${encodeURIComponent(date)}` : "";
@@ -156,6 +158,15 @@ function FantasyBaseballPanel() {
       return true;
     });
   }, [roster, showExtras, typeFilter]);
+
+  function Stat({ label, val }) {
+    return (
+      <div className="flex flex-col items-center">
+        <div className="opacity-60 text-[10px]">{label}</div>
+        <div className="font-semibold">{val}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
@@ -254,43 +265,54 @@ function FantasyBaseballPanel() {
             <div className="font-semibold">Roster</div>
             <div className="opacity-60 text-xs">{selectedTeam}</div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="table table-xs">
-              <thead>
-                <tr>
-                  <th>Pos</th>
-                  <th>Player</th>
-                  <th>R</th><th>H</th><th>RBI</th><th>HR</th><th>SB</th>
-                  <th>AVG</th><th>OPS</th>
-                  <th>IP</th><th>W</th><th>L</th><th>SV</th><th>K</th><th>ERA</th><th>WHIP</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredRoster.map((p) => (
-                  <tr key={p.key}>
-                    <td>{p.selectedPosition || p.position || '-'}</td>
-                    <td>
-                      <div className="font-medium">{p.name}</div>
-                      <div className="opacity-60 text-[10px]">{p.teamAbbr || p.teamFullName || ''}</div>
-                    </td>
-                    <td>{p.runs ?? 0}</td>
-                    <td>{p.hits ?? 0}</td>
-                    <td>{p.rbis ?? 0}</td>
-                    <td>{p.homeRuns ?? 0}</td>
-                    <td>{p.sb ?? 0}</td>
-                    <td>{typeof p.avg === 'number' ? p.avg.toFixed(3) : '0.000'}</td>
-                    <td>{typeof p.ops === 'number' ? p.ops.toFixed(3) : '-'}</td>
-                    <td>{p.ip ?? 0}</td>
-                    <td>{p.wins ?? 0}</td>
-                    <td>{p.losses ?? 0}</td>
-                    <td>{p.saves ?? 0}</td>
-                    <td>{p.strikeouts ?? 0}</td>
-                    <td>{typeof p.era === 'number' ? p.era.toFixed(2) : '-'}</td>
-                    <td>{typeof p.whip === 'number' ? p.whip.toFixed(2) : '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="grid grid-cols-1 gap-2">
+            {filteredRoster.map((p) => {
+              const isPitcher = (p.positionType || '').toUpperCase() === 'P';
+              return (
+                <div key={p.key} className="card card-compact border border-base-300">
+                  <div className="card-body py-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="badge badge-outline">{p.selectedPosition || p.position || '-'}</span>
+                        <div>
+                          <div className="font-medium leading-tight">{p.name}</div>
+                          <div className="opacity-60 text-[10px]">{p.teamAbbr || p.teamFullName || ''}</div>
+                        </div>
+                      </div>
+                      {typeof p.totalPoints === 'number' && (
+                        <div className="text-right">
+                          <div className="opacity-60 text-xs">Pts</div>
+                          <div className="font-semibold">{p.totalPoints.toFixed(1)}</div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-4 gap-2 mt-2 text-xs">
+                      {!isPitcher ? (
+                        <>
+                          <Stat label="R" val={p.runs ?? 0} />
+                          <Stat label="H" val={p.hits ?? 0} />
+                          <Stat label="RBI" val={p.rbis ?? 0} />
+                          <Stat label="HR" val={p.homeRuns ?? 0} />
+                          <Stat label="SB" val={p.sb ?? 0} />
+                          <Stat label="AVG" val={typeof p.avg === 'number' ? p.avg.toFixed(3) : '0.000'} />
+                          <Stat label="OPS" val={typeof p.ops === 'number' ? p.ops.toFixed(3) : '-'} />
+                        </>
+                      ) : (
+                        <>
+                          <Stat label="IP" val={p.ip ?? 0} />
+                          <Stat label="W" val={p.wins ?? 0} />
+                          <Stat label="L" val={p.losses ?? 0} />
+                          <Stat label="SV" val={p.saves ?? 0} />
+                          <Stat label="K" val={p.strikeouts ?? 0} />
+                          <Stat label="ERA" val={typeof p.era === 'number' ? p.era.toFixed(2) : '-'} />
+                          <Stat label="WHIP" val={typeof p.whip === 'number' ? p.whip.toFixed(2) : '-'} />
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

@@ -8,6 +8,8 @@ import RssCard from "./RssCard";
 import useSportsData from "../components/hooks/useSportsData";
 import useFinanceData from "../components/hooks/useFinanceData";
 import useRssData from "../components/hooks/useRssData";
+import useFantasyData from "../components/hooks/useFantasyData";
+import FantasyCard from "./FantasyCard";
 import { memo, useMemo, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { updatePinnedFinanceData } from "../store/pinnedSlice.js";
@@ -54,6 +56,12 @@ export const Carousel = memo(function Carousel() {
     hasActiveRssFeeds,
   } = useRssData();
 
+  const {
+    roster: fantasyRoster,
+    connectionStatus: fantasyConnectionStatus,
+    hasFantasySelection,
+  } = useFantasyData();
+
   // Get speed setting from Redux
   const speed = useSelector((state) => state.layout?.speed || "classic");
 
@@ -72,9 +80,10 @@ export const Carousel = memo(function Carousel() {
     return (
       tradesData?.data?.length > 0 ||
       sportsData?.length > 0 ||
-      rssItems?.length > 0
+      rssItems?.length > 0 ||
+      fantasyRoster?.length > 0
     );
-  }, [tradesData?.data?.length, sportsData?.length, rssItems?.length]);
+  }, [tradesData?.data?.length, sportsData?.length, rssItems?.length, fantasyRoster?.length]);
 
   const showEmptyMessage = useMemo(() => {
     return !hasFinanceFilters && !hasActiveSportsToggles && !hasActiveRssFeeds;
@@ -112,6 +121,17 @@ export const Carousel = memo(function Carousel() {
       });
     }
 
+    // Add fantasy roster cards (limit to first 10 for space)
+    if (fantasyRoster?.length > 0) {
+      fantasyRoster.slice(0, 10).forEach((player) => {
+        items.push(
+          <CardWrapper key={`fantasy-${player.key}`} index={index++}>
+            <FantasyCard player={player} />
+          </CardWrapper>
+        );
+      });
+    }
+
     // Add RSS cards
     if (rssItems?.length > 0) {
       rssItems.forEach((rssItem) => {
@@ -124,7 +144,7 @@ export const Carousel = memo(function Carousel() {
     }
 
     return items;
-  }, [tradesData?.data, sportsData, rssItems]);
+  }, [tradesData?.data, sportsData, rssItems, fantasyRoster]);
 
   return (
     <div className="flex-grow overflow-hidden">
