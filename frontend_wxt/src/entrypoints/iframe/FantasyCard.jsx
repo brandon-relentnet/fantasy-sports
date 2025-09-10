@@ -66,8 +66,8 @@ export default function FantasyCard({ player, dateBadge }) {
             ) : (
               <>
                 <span>K {player.strikeouts ?? 0}</span>
-                <span>ERA {typeof player.era === 'number' ? player.era.toFixed(2) : '-'}</span>
-                <span>WHIP {typeof player.whip === 'number' ? player.whip.toFixed(2) : '-'}</span>
+                {typeof player.era === 'number' && (<span>ERA {player.era.toFixed(2)}</span>)}
+                {typeof player.whip === 'number' && (<span>WHIP {player.whip.toFixed(2)}</span>)}
               </>
             )}
           </div>
@@ -113,19 +113,17 @@ export default function FantasyCard({ player, dateBadge }) {
               <Stat label="H" val={player.hits ?? 0} />
               <Stat label="RBI" val={player.rbis ?? 0} />
               <Stat label="HR" val={player.homeRuns ?? 0} />
-              <Stat label="SB" val={player.sb ?? 0} />
               <Stat label="AVG" val={typeof player.avg === 'number' ? player.avg.toFixed(3) : '0.000'} />
-              <Stat label="OPS" val={typeof player.ops === 'number' ? player.ops.toFixed(3) : '-'} />
+              <Stat label="OPS" val={typeof player.ops === 'number' ? player.ops.toFixed(3) : '0.000'} />
             </>
           ) : (
             <>
               <Stat label="IP" val={player.ip ?? 0} />
               <Stat label="W" val={player.wins ?? 0} />
-              <Stat label="L" val={player.losses ?? 0} />
               <Stat label="SV" val={player.saves ?? 0} />
               <Stat label="K" val={player.strikeouts ?? 0} />
-              <Stat label="ERA" val={typeof player.era === 'number' ? player.era.toFixed(2) : '-'} />
-              <Stat label="WHIP" val={typeof player.whip === 'number' ? player.whip.toFixed(2) : '-'} />
+              {typeof player.era === 'number' && (<Stat label="ERA" val={player.era.toFixed(2)} />)}
+              {typeof player.whip === 'number' && (<Stat label="WHIP" val={player.whip.toFixed(2)} />)}
             </>
           )}
         </div>

@@ -244,25 +244,27 @@ function FantasyBaseballPanel() {
         {/* Rest of controls are only visible when enabled */}
         {fantasyEnabled && (
           <>
-            {/* Access token */}
-            {step === 'signin' && (
-              <div className="flex items-center gap-2 w-full">
-                <button className="btn btn-primary btn-sm" onClick={signInWithYahoo}>Sign in with Yahoo</button>
-              </div>
-            )}
-            {accessToken && (
-              <div className="flex items-center gap-2">
-                <span className="badge badge-success badge-sm">Signed in</span>
-                <button className="btn btn-ghost btn-xs" onClick={() => { try { localStorage.removeItem('yahoo_access_token'); localStorage.removeItem('yahoo_selected_league'); localStorage.removeItem('yahoo_selected_team'); } catch {}; setAccessToken(''); setSelectedLeague(''); setSelectedTeam(''); setLeagues([]); setTeams([]); setRoster([]); setStep('signin'); }}>Sign out</button>
-              </div>
-            )}
+            {/* Sign in/out + Date controls in one row */}
+            <div className="flex items-center gap-2 w-full">
+              {!accessToken ? (
+                <button className="btn btn-primary btn-xs" onClick={signInWithYahoo}>Sign in with Yahoo</button>
+              ) : (
+                <button
+                  className="group"
+                  onClick={() => { try { localStorage.removeItem('yahoo_access_token'); localStorage.removeItem('yahoo_selected_league'); localStorage.removeItem('yahoo_selected_team'); } catch {}; setAccessToken(''); setSelectedLeague(''); setSelectedTeam(''); setLeagues([]); setTeams([]); setRoster([]); setStep('signin'); }}
+                  title="Sign out"
+                >
+                  <span className="badge badge-success badge-sm group-hover:hidden">Signed in</span>
+                  <span className="badge badge-error badge-sm hidden group-hover:inline-block">Sign out</span>
+                </button>
+              )}
 
-            {/* Date controls: always in date mode */}
-            <div className="pointer-events-auto join">
-              <button className="join-item btn btn-xs" aria-label="Next day" onClick={() => shiftDate(1)}>↑</button>
-              <input type="date" className="input-bordered join-item input input-xs" value={date} onChange={(e) => { setDate(e.target.value); try { localStorage.setItem('yahoo_date', e.target.value); } catch {}; }} />
-              <button className="join-item btn btn-xs" aria-label="Previous day" onClick={() => shiftDate(-1)}>↓</button>
-              <button className="join-item btn btn-xs" onClick={setToday}>Today</button>
+              <div className="pointer-events-auto join">
+                <button className="join-item btn btn-xs" aria-label="Next day" onClick={() => shiftDate(1)}>↑</button>
+                <input type="date" className="input-bordered join-item input input-xs" value={date} onChange={(e) => { setDate(e.target.value); try { localStorage.setItem('yahoo_date', e.target.value); } catch {}; }} />
+                <button className="join-item btn btn-xs" aria-label="Previous day" onClick={() => shiftDate(-1)}>↓</button>
+                <button className="join-item btn btn-xs" onClick={setToday}>Today</button>
+              </div>
             </div>
 
             <div className="border border-base-300 rounded-md pointer-events-auto join">
