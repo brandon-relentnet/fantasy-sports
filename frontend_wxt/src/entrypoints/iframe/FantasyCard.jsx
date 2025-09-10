@@ -1,15 +1,54 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+import { useSelector } from 'react-redux';
 
 export default function FantasyCard({ player }) {
+  const layout = useSelector((state) => state.layout?.mode || 'compact');
+  const isCompact = useMemo(() => layout === 'compact', [layout]);
   const isPitcher = (player.positionType || '').toUpperCase() === 'P';
+
+  if (isCompact) {
+    // Compact mode: single-line concise summary
+    return (
+      <div className="card bg-base-200 border border-base-300 h-14">
+        <div className="card-body py-2 px-2 flex-row items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="badge badge-outline text-[10px]">
+              {player.selectedPosition || player.position || '-'}
+            </span>
+            <div className="font-medium truncate max-w-[130px]">{player.name}</div>
+            <div className="text-[10px] opacity-60 truncate max-w-[70px]">
+              {player.teamAbbr || player.teamFullName || ''}
+            </div>
+          </div>
+          <div className="flex items-center gap-3 text-xs">
+            {!isPitcher ? (
+              <>
+                <span>HR {player.homeRuns ?? 0}</span>
+                <span>RBI {player.rbis ?? 0}</span>
+                <span>AVG {typeof player.avg === 'number' ? player.avg.toFixed(3) : '0.000'}</span>
+              </>
+            ) : (
+              <>
+                <span>K {player.strikeouts ?? 0}</span>
+                <span>ERA {typeof player.era === 'number' ? player.era.toFixed(2) : '-'}</span>
+                <span>WHIP {typeof player.whip === 'number' ? player.whip.toFixed(2) : '-'}</span>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Comfort mode: richer layout
   return (
-    <div className="card card-compact bg-base-100 border border-base-300 h-full">
-      <div className="card-body py-3">
+    <div className="card bg-base-200 border border-base-300 h-40">
+      <div className="card-body p-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="badge badge-outline">{player.selectedPosition || player.position || '-'}</span>
             <div>
-              <div className="font-medium leading-tight">{player.name}</div>
+              <div className="font-semibold leading-tight">{player.name}</div>
               <div className="text-[10px] opacity-60">{player.teamAbbr || player.teamFullName || ''}</div>
             </div>
           </div>
@@ -56,4 +95,3 @@ function Stat({ label, val }) {
     </div>
   );
 }
-

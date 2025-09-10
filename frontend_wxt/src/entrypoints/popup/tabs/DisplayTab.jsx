@@ -21,24 +21,34 @@ function FantasyBaseballPanel() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [showExtras, setShowExtras] = useState(true);
 
-  // Load saved token on mount
+  // Load saved token + selections + date on mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem('yahoo_access_token');
+      const savedLeague = localStorage.getItem('yahoo_selected_league');
+      const savedTeam = localStorage.getItem('yahoo_selected_team');
+      const savedMode = localStorage.getItem('yahoo_date_mode');
+      const savedDate = localStorage.getItem('yahoo_date');
       if (saved) {
         setAccessToken(saved);
         setStep('league');
         // Preload leagues quietly
         setTimeout(() => fetchLeagues(), 0);
       }
+      if (savedLeague) setSelectedLeague(savedLeague);
+      if (savedTeam) setSelectedTeam(savedTeam);
+      if (savedMode === 'today' || savedMode === 'date') setDateMode(savedMode);
+      if (savedDate && /^\d{4}-\d{2}-\d{2}$/.test(savedDate)) setDate(savedDate);
     } catch {}
   }, []);
 
-  // When token changes, persist it
+  // When token changes, persist it and load leagues
   useEffect(() => {
     if (accessToken) {
       try { localStorage.setItem('yahoo_access_token', accessToken); } catch {}
       setStep('league');
+      // Ensure leagues load after token is set
+      fetchLeagues();
     }
   }, [accessToken]);
 
@@ -71,6 +81,13 @@ function FantasyBaseballPanel() {
       const data = await res.json();
       const arr = Array.isArray(data.leagues) ? data.leagues : [];
       setLeagues(arr);
+      // Auto choose saved league if present
+      try {
+        const savedLeague = localStorage.getItem('yahoo_selected_league');
+        if (savedLeague && arr.find((l) => l.league_key === savedLeague)) {
+          setTimeout(() => chooseLeague(savedLeague), 0);
+        }
+      } catch {}
     } finally {
       setLoading(false);
     }
@@ -88,6 +105,13 @@ function FantasyBaseballPanel() {
       const t = (data.standings || []).map((x) => ({ team_key: x.team_key, name: x.name }));
       setTeams(t);
       setStep("team");
+      // Auto choose saved team if present
+      try {
+        const savedTeam = localStorage.getItem('yahoo_selected_team');
+        if (savedTeam && t.find((tm) => tm.team_key === savedTeam)) {
+          setTimeout(() => chooseTeam(savedTeam), 0);
+        }
+      } catch {}
     } finally {
       setLoading(false);
     }
@@ -119,6 +143,20 @@ function FantasyBaseballPanel() {
       setTimeout(() => refreshRoster(), 0);
     }
   }
+
+  // Persist filters for iframe carousel to use
+  useEffect(() => {
+    try { localStorage.setItem('yahoo_filter_type', typeFilter); } catch {}
+  }, [typeFilter]);
+  useEffect(() => {
+    try { localStorage.setItem('yahoo_filter_showExtras', String(showExtras)); } catch {}
+  }, [showExtras]);
+  useEffect(() => {
+    try { localStorage.setItem('yahoo_date_mode', dateMode); } catch {}
+  }, [dateMode]);
+  useEffect(() => {
+    try { localStorage.setItem('yahoo_date', date); } catch {}
+  }, [date]);
 
   async function chooseTeam(teamKey) {
     setSelectedTeam(teamKey);
@@ -217,25 +255,31 @@ function FantasyBaseballPanel() {
       {/* Flow content */}
       {step === 'league' && (
         <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <div className="opacity-70 text-sm">Select a League</div>
+          <div className="flex items-center justify-between">
+            <div className="text-sm opacity-70">Select a League</div>
             <button className="btn btn-ghost btn-xs" onClick={fetchLeagues} disabled={loading}>Refresh</button>
           </div>
           {loading ? (
-            <div className="opacity-70 text-sm">Loading leagues…</div>
+            <div className="text-sm opacity-70">Loading leagues…</div>
           ) : leagues.length ? (
-            <div className="gap-2 grid grid-cols-2">
+            <div className="space-y-1">
               {leagues.map((l) => (
-                <button key={l.league_key} className="btn btn-sm" onClick={() => chooseLeague(l.league_key)}>
-                  <div className="flex flex-col items-start">
-                    <span className="font-medium text-sm">{l.name}</span>
-                    <span className="opacity-60 text-xs">{l.season ?? ''}</span>
-                  </div>
-                </button>
+                <label key={l.league_key} className={`label cursor-pointer justify-start gap-3 ${selectedLeague === l.league_key ? 'text-base-content font-semibold' : 'text-base-content/70'}`}>
+                  <input
+                    type="radio"
+                    name="fantasy-league"
+                    className={`radio radio-sm ${selectedLeague === l.league_key ? 'radio-primary' : ''}`}
+                    checked={selectedLeague === l.league_key}
+                    onChange={() => chooseLeague(l.league_key)}
+                  />
+                  <span className="label-text">
+                    {l.name} <span className="opacity-60 text-xs ml-2">{l.season ?? ''}</span>
+                  </span>
+                </label>
               ))}
             </div>
           ) : (
-            <div className="opacity-70 text-sm">No leagues found.</div>
+            <div className="text-sm opacity-70">No leagues found.</div>
           )}
         </div>
       )}
@@ -246,76 +290,26 @@ function FantasyBaseballPanel() {
             <button className="link" onClick={() => setStep('league')}>Change league</button>
             <span className="opacity-60">{selectedLeague}</span>
           </div>
-          <div className="gap-2 grid grid-cols-2">
+          <div className="space-y-1">
             {teams.map((t) => (
-              <button key={t.team_key} className="btn btn-sm" onClick={() => chooseTeam(t.team_key)}>
-                <div className="flex flex-col items-start">
-                  <span className="font-medium text-sm">{t.name}</span>
-                  <span className="opacity-60 text-xs">{t.team_key}</span>
-                </div>
-              </button>
+              <label key={t.team_key} className={`label cursor-pointer justify-start gap-3 ${selectedTeam === t.team_key ? 'text-base-content font-semibold' : 'text-base-content/70'}`}>
+                <input
+                  type="radio"
+                  name="fantasy-team"
+                  className={`radio radio-sm ${selectedTeam === t.team_key ? 'radio-primary' : ''}`}
+                  checked={selectedTeam === t.team_key}
+                  onChange={() => chooseTeam(t.team_key)}
+                />
+                <span className="label-text">
+                  {t.name} <span className="opacity-60 text-xs ml-2">{t.team_key}</span>
+                </span>
+              </label>
             ))}
           </div>
         </div>
       )}
 
-      {!!roster.length && (
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <div className="font-semibold">Roster</div>
-            <div className="opacity-60 text-xs">{selectedTeam}</div>
-          </div>
-          <div className="grid grid-cols-1 gap-2">
-            {filteredRoster.map((p) => {
-              const isPitcher = (p.positionType || '').toUpperCase() === 'P';
-              return (
-                <div key={p.key} className="card card-compact border border-base-300">
-                  <div className="card-body py-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="badge badge-outline">{p.selectedPosition || p.position || '-'}</span>
-                        <div>
-                          <div className="font-medium leading-tight">{p.name}</div>
-                          <div className="opacity-60 text-[10px]">{p.teamAbbr || p.teamFullName || ''}</div>
-                        </div>
-                      </div>
-                      {typeof p.totalPoints === 'number' && (
-                        <div className="text-right">
-                          <div className="opacity-60 text-xs">Pts</div>
-                          <div className="font-semibold">{p.totalPoints.toFixed(1)}</div>
-                        </div>
-                      )}
-                    </div>
-                    <div className="grid grid-cols-4 gap-2 mt-2 text-xs">
-                      {!isPitcher ? (
-                        <>
-                          <Stat label="R" val={p.runs ?? 0} />
-                          <Stat label="H" val={p.hits ?? 0} />
-                          <Stat label="RBI" val={p.rbis ?? 0} />
-                          <Stat label="HR" val={p.homeRuns ?? 0} />
-                          <Stat label="SB" val={p.sb ?? 0} />
-                          <Stat label="AVG" val={typeof p.avg === 'number' ? p.avg.toFixed(3) : '0.000'} />
-                          <Stat label="OPS" val={typeof p.ops === 'number' ? p.ops.toFixed(3) : '-'} />
-                        </>
-                      ) : (
-                        <>
-                          <Stat label="IP" val={p.ip ?? 0} />
-                          <Stat label="W" val={p.wins ?? 0} />
-                          <Stat label="L" val={p.losses ?? 0} />
-                          <Stat label="SV" val={p.saves ?? 0} />
-                          <Stat label="K" val={p.strikeouts ?? 0} />
-                          <Stat label="ERA" val={typeof p.era === 'number' ? p.era.toFixed(2) : '-'} />
-                          <Stat label="WHIP" val={typeof p.whip === 'number' ? p.whip.toFixed(2) : '-'} />
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      {/* Roster cards are displayed in the carousel */}
     </div>
   );
 }
