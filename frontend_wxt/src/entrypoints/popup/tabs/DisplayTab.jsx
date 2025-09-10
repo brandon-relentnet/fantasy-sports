@@ -5,12 +5,13 @@ import { RssSection } from "../../components/RssSection.jsx";
 import { useAuth } from "../../components/hooks/useAuth.tsx";
 import React, { useEffect, useMemo, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { setFantasyEnabled } from "@/entrypoints/store/fantasySlice.js";
+import { setToggles } from "@/entrypoints/store/togglesSlice.js";
 import { API_ENDPOINTS } from "@/entrypoints/config/endpoints.js";
 
 function FantasyBaseballPanel() {
   const dispatch = useDispatch();
-  const fantasyEnabled = useSelector((s) => s.fantasy?.enabled ?? true);
+  const toggles = useSelector((s) => s.toggles || {});
+  const fantasyEnabled = !!(toggles.YAHOO_FANTASY ?? true);
   // Use Redux as source of truth for enabled
   const SPORTS_API = "http://localhost:4000";
   const [accessToken, setAccessToken] = useState("");
@@ -260,10 +261,10 @@ function FantasyBaseballPanel() {
               <input
                 type="checkbox"
                 className="toggle toggle-primary toggle-sm"
-                checked={!!fantasyEnabled}
+                checked={fantasyEnabled}
                 onChange={(e) => {
                   const val = e.target.checked;
-                  dispatch(setFantasyEnabled(val));
+                  dispatch(setToggles({ ...toggles, YAHOO_FANTASY: val }));
                 }}
               />
               <span className="label-text">Enable Yahoo Fantasy</span>

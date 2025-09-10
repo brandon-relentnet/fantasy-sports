@@ -1,15 +1,29 @@
 import React, { useMemo } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { LockClosedIcon, LockOpenIcon } from "@heroicons/react/24/solid";
+import { addPinnedItem, removePinnedItem, selectIsItemPinned } from "../store/pinnedSlice.js";
 
 export default function FantasyCard({ player, dateBadge }) {
   const layout = useSelector((state) => state.layout?.mode || 'compact');
+  const dispatch = useDispatch();
+  const isPinned = useSelector((state) => selectIsItemPinned(state, 'fantasy', player.key));
+  const PinButton = ({ size = "w-4 h-4" }) => (
+    <button
+      onClick={(e) => { e.stopPropagation(); if (isPinned) { dispatch(removePinnedItem({ type: 'fantasy', id: player.key })); } else { dispatch(addPinnedItem({ type: 'fantasy', data: { ...player, id: player.key } })); } }}
+      className={`${size} text-base-content/60 hover:text-base-content transition-colors p-1 rounded hover:bg-base-300`}
+      title={isPinned ? "Unpin" : "Pin"}
+    >
+      {isPinned ? <LockClosedIcon className="w-full h-full" /> : <LockOpenIcon className="w-full h-full" />}
+    </button>
+  );
   const isCompact = useMemo(() => layout === 'compact', [layout]);
   const isPitcher = (player.positionType || '').toUpperCase() === 'P';
 
   if (isCompact) {
     // Compact mode: single-line concise summary
     return (
-      <div className="card bg-base-200 border border-base-300 h-14">
+      <div className="card bg-base-200 border border-base-300 h-14 relative">
+        <div className="absolute top-1 right-1 opacity-0 hover:opacity-100 transition-opacity z-10"><PinButton size="size-6" /></div>
         <div className="card-body py-2 px-2 flex-row items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="badge badge-outline text-[10px]">
@@ -45,7 +59,8 @@ export default function FantasyCard({ player, dateBadge }) {
 
   // Comfort mode: richer layout
   return (
-    <div className="card bg-base-200 border border-base-300 h-40">
+    <div className="card bg-base-200 border border-base-300 h-40 relative">
+      <div className="absolute top-2 right-2 opacity-0 hover:opacity-100 transition-opacity z-10"><PinButton size="size-6" /></div>
       <div className="card-body p-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

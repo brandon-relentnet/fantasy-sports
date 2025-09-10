@@ -18,7 +18,7 @@ export default function useFantasyData() {
   const [selectedTeam, setSelectedTeam] = useState(() => {
     try { return localStorage.getItem('yahoo_selected_team') || ''; } catch { return ''; }
   });
-  const enabled = useSelector((state) => state.fantasy?.enabled ?? true);
+  const enabled = useSelector((state) => (state.toggles?.YAHOO_FANTASY ?? true));
 
   useEffect(() => {
     // load filters from popup
