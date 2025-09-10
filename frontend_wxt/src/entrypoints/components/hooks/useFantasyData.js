@@ -18,15 +18,7 @@ export default function useFantasyData() {
   const [selectedTeam, setSelectedTeam] = useState(() => {
     try { return localStorage.getItem('yahoo_selected_team') || ''; } catch { return ''; }
   });
-  const enabledRedux = useSelector((state) => state.fantasy?.enabled ?? true);
-  const [enabled, setEnabled] = useState(() => {
-    try {
-      const v = localStorage.getItem('yahoo_enabled');
-      return v === null ? enabledRedux : v === 'true';
-    } catch {
-      return enabledRedux;
-    }
-  });
+  const enabled = useSelector((state) => state.fantasy?.enabled ?? true);
 
   useEffect(() => {
     // load filters from popup
@@ -48,7 +40,6 @@ export default function useFantasyData() {
     const onStorage = (e) => {
       if (e.key === 'yahoo_access_token') setAccessToken(e.newValue || '');
       if (e.key === 'yahoo_selected_team') setSelectedTeam(e.newValue || '');
-      if (e.key === 'yahoo_enabled') setEnabled(e.newValue === 'true');
       if (e.key === 'yahoo_filter_type' && (e.newValue === 'all' || e.newValue === 'batters' || e.newValue === 'pitchers')) {
         setFilterType(e.newValue);
       }
@@ -68,10 +59,7 @@ export default function useFantasyData() {
     return () => window.removeEventListener('storage', onStorage);
   }, []);
 
-  // React to redux enabled changes immediately
-  useEffect(() => {
-    setEnabled(enabledRedux);
-  }, [enabledRedux]);
+  // No separate local enabled state — use Redux directly
 
   useEffect(() => {
     let cancelled = false;
