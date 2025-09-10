@@ -225,6 +225,16 @@ function FantasyBaseballPanel() {
 
         {step !== 'signin' && (
           <>
+            {/* Enable Toggle */}
+            <label className="label cursor-pointer gap-2 mr-2">
+              <input
+                type="checkbox"
+                className="toggle toggle-primary toggle-sm"
+                checked={(() => { try { return (localStorage.getItem('yahoo_enabled') ?? 'true') === 'true'; } catch { return true; } })()}
+                onChange={(e) => { try { localStorage.setItem('yahoo_enabled', String(e.target.checked)); window.dispatchEvent(new StorageEvent('storage', { key: 'yahoo_enabled', newValue: String(e.target.checked) })); } catch {} }}
+              />
+              <span className="label-text">Enable Yahoo Fantasy</span>
+            </label>
             <div className="border border-base-300 rounded-md join">
               <button className={`join-item btn btn-xs ${dateMode==='today' ? 'btn-active' : ''}`} onClick={() => setDateMode('today')}>Today</button>
               <button className={`join-item btn btn-xs ${dateMode==='date' ? 'btn-active' : ''}`} onClick={() => { setDateMode('date'); if (!date) setToday(); }}>Date</button>
@@ -262,21 +272,21 @@ function FantasyBaseballPanel() {
           {loading ? (
             <div className="text-sm opacity-70">Loading leagues…</div>
           ) : leagues.length ? (
-            <div className="space-y-1">
-              {leagues.map((l) => (
-                <label key={l.league_key} className={`label cursor-pointer justify-start gap-3 ${selectedLeague === l.league_key ? 'text-base-content font-semibold' : 'text-base-content/70'}`}>
-                  <input
-                    type="radio"
-                    name="fantasy-league"
-                    className={`radio radio-sm ${selectedLeague === l.league_key ? 'radio-primary' : ''}`}
-                    checked={selectedLeague === l.league_key}
-                    onChange={() => chooseLeague(l.league_key)}
-                  />
-                  <span className="label-text">
-                    {l.name} <span className="opacity-60 text-xs ml-2">{l.season ?? ''}</span>
-                  </span>
-                </label>
-              ))}
+            <div className="form-control w-full">
+              <select
+                className="select select-sm select-bordered w-full"
+                value={selectedLeague}
+                onChange={(e) => chooseLeague(e.target.value)}
+              >
+                <option value="" disabled>
+                  Choose a league…
+                </option>
+                {leagues.map((l) => (
+                  <option key={l.league_key} value={l.league_key}>
+                    {l.name} ({l.season ?? ''})
+                  </option>
+                ))}
+              </select>
             </div>
           ) : (
             <div className="text-sm opacity-70">No leagues found.</div>
@@ -290,21 +300,21 @@ function FantasyBaseballPanel() {
             <button className="link" onClick={() => setStep('league')}>Change league</button>
             <span className="opacity-60">{selectedLeague}</span>
           </div>
-          <div className="space-y-1">
-            {teams.map((t) => (
-              <label key={t.team_key} className={`label cursor-pointer justify-start gap-3 ${selectedTeam === t.team_key ? 'text-base-content font-semibold' : 'text-base-content/70'}`}>
-                <input
-                  type="radio"
-                  name="fantasy-team"
-                  className={`radio radio-sm ${selectedTeam === t.team_key ? 'radio-primary' : ''}`}
-                  checked={selectedTeam === t.team_key}
-                  onChange={() => chooseTeam(t.team_key)}
-                />
-                <span className="label-text">
-                  {t.name} <span className="opacity-60 text-xs ml-2">{t.team_key}</span>
-                </span>
-              </label>
-            ))}
+          <div className="form-control w-full">
+            <select
+              className="select select-sm select-bordered w-full"
+              value={selectedTeam}
+              onChange={(e) => chooseTeam(e.target.value)}
+            >
+              <option value="" disabled>
+                Choose a team…
+              </option>
+              {teams.map((t) => (
+                <option key={t.team_key} value={t.team_key}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       )}

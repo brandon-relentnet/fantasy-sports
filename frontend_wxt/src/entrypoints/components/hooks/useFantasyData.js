@@ -9,13 +9,20 @@ export default function useFantasyData() {
   const [showExtras, setShowExtras] = useState(true); // bench + IL
   const [dateMode, setDateMode] = useState('today'); // today | date
   const [date, setDate] = useState(''); // YYYY-MM-DD
-
-  const accessToken = useMemo(() => {
+  const [accessToken, setAccessToken] = useState(() => {
     try { return localStorage.getItem('yahoo_access_token') || ''; } catch { return ''; }
-  }, []);
-  const selectedTeam = useMemo(() => {
+  });
+  const [selectedTeam, setSelectedTeam] = useState(() => {
     try { return localStorage.getItem('yahoo_selected_team') || ''; } catch { return ''; }
-  }, []);
+  });
+  const [enabled, setEnabled] = useState(() => {
+    try {
+      const v = localStorage.getItem('yahoo_enabled');
+      return v === null ? true : v === 'true';
+    } catch {
+      return true;
+    }
+  });
 
   useEffect(() => {
     // load filters from popup
@@ -31,6 +38,9 @@ export default function useFantasyData() {
     } catch {}
 
     const onStorage = (e) => {
+      if (e.key === 'yahoo_access_token') setAccessToken(e.newValue || '');
+      if (e.key === 'yahoo_selected_team') setSelectedTeam(e.newValue || '');
+      if (e.key === 'yahoo_enabled') setEnabled(e.newValue === 'true');
       if (e.key === 'yahoo_filter_type' && (e.newValue === 'all' || e.newValue === 'batters' || e.newValue === 'pitchers')) {
         setFilterType(e.newValue);
       }
@@ -51,7 +61,7 @@ export default function useFantasyData() {
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      if (!accessToken || !selectedTeam) return;
+      if (!enabled || !accessToken || !selectedTeam) return;
       setConnectionStatus('loading');
       try {
         const q = dateMode === 'date' && date ? `?date=${encodeURIComponent(date)}` : '';
