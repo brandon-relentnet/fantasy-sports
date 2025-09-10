@@ -210,14 +210,14 @@ function FantasyBaseballPanel() {
   return (
     <div className="space-y-3">
       {/* Header controls */}
-      <div className="flex flex-wrap items-center gap-2 relative z-50 pointer-events-auto">
+      <div className="z-50 relative flex flex-wrap items-center gap-2 pointer-events-auto">
         {/* Yahoo + ESPN toggles (compact row, like Sports/Finance) */}
-        <div className="flex gap-2 w-full">
+        <div className="gap-4 grid grid-cols-2">
           <label
-            className={`${fantasyEnabled ? 'text-base-content' : 'text-base-content/50'} .label btn btn-ghost justify-between flex items-center flex-1`}
+            className={`${fantasyEnabled ? 'text-base-content' : 'text-base-content/50'} .label btn btn-ghost justify-between flex items-center`}
           >
             <span className="flex items-center gap-2">
-              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#6001D2] text-white text-[10px] font-bold">Y!</span>
+              <span className="inline-flex justify-center items-center bg-[#6001D2] rounded-full w-5 h-5 font-bold text-[10px] text-white">Y!</span>
               <span>Yahoo</span>
             </span>
             <input
@@ -230,10 +230,10 @@ function FantasyBaseballPanel() {
               }}
             />
           </label>
-          <div className="tooltip tooltip-bottom flex-1" data-tip="Coming soon!">
-            <label className={`text-base-content/50 .label btn btn-ghost justify-between flex items-center w-full cursor-not-allowed`}>
+          <div className="tooltip-bottom tooltip" data-tip="Coming soon!">
+            <label className={`text-base-content/50 .label btn btn-ghost justify-between flex items-center cursor-not-allowed`}>
               <span className="flex items-center gap-2">
-                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#C8102E] text-white text-[10px] font-bold">ES</span>
+                <span className="inline-flex justify-center items-center bg-[#C8102E] rounded-full w-5 h-5 font-bold text-[10px] text-white">ES</span>
                 <span>ESPN</span>
               </span>
               <input type="checkbox" className="toggle toggle-primary" disabled />
@@ -258,12 +258,12 @@ function FantasyBaseballPanel() {
             )}
 
             {/* Filters */}
-            <div className="border border-base-300 rounded-md join pointer-events-auto">
+            <div className="border border-base-300 rounded-md pointer-events-auto join">
               <button className={`join-item btn btn-xs ${dateMode==='today' ? 'btn-active' : ''}`} onClick={() => { setDateMode('today'); try{ localStorage.setItem('yahoo_date_mode','today'); }catch{} }}>Today</button>
               <button className={`join-item btn btn-xs ${dateMode==='date' ? 'btn-active' : ''}`} onClick={() => { setDateMode('date'); try{ localStorage.setItem('yahoo_date_mode','date'); }catch{}; if (!date) setToday(); }}>Date</button>
             </div>
             {dateMode === 'date' && (
-              <div className="join pointer-events-auto">
+              <div className="pointer-events-auto join">
                 <button className="join-item btn btn-xs" aria-label="Next day" onClick={() => shiftDate(1)}>↑</button>
                 <input type="date" className="input-bordered join-item input input-xs" value={date} onChange={(e) => { setDate(e.target.value); try { localStorage.setItem('yahoo_date', e.target.value); } catch {}; }} />
                 <button className="join-item btn btn-xs" aria-label="Previous day" onClick={() => shiftDate(-1)}>↓</button>
@@ -271,19 +271,19 @@ function FantasyBaseballPanel() {
               </div>
             )}
 
-            <div className="border border-base-300 rounded-md join pointer-events-auto">
+            <div className="border border-base-300 rounded-md pointer-events-auto join">
               <button className={`join-item btn btn-xs ${typeFilter==='all' ? 'btn-active' : ''}`} onClick={() => { setTypeFilter('all'); try{ localStorage.setItem('yahoo_type_filter','all'); }catch{} }}>All</button>
               <button className={`join-item btn btn-xs ${typeFilter==='batters' ? 'btn-active' : ''}`} onClick={() => { setTypeFilter('batters'); try{ localStorage.setItem('yahoo_type_filter','batters'); }catch{} }}>Batters</button>
               <button className={`join-item btn btn-xs ${typeFilter==='pitchers' ? 'btn-active' : ''}`} onClick={() => { setTypeFilter('pitchers'); try{ localStorage.setItem('yahoo_type_filter','pitchers'); }catch{} }}>Pitchers</button>
             </div>
-            <label className="gap-2 cursor-pointer label pointer-events-auto">
+            <label className="gap-2 cursor-pointer pointer-events-auto label">
               <input type="checkbox" className="checkbox checkbox-xs" checked={showExtras} onChange={(e) => { setShowExtras(e.target.checked); try{ localStorage.setItem('yahoo_show_extras', String(e.target.checked)); }catch{} }} />
               <span className="label-text">Show Bench & IL</span>
             </label>
 
             {/* Sorting Controls */}
-            <div className="border border-base-300 rounded-md join pointer-events-auto">
-              <select className="join-item select select-xs" value={sortKey} onChange={(e) => { setSortKey(e.target.value); try{ localStorage.setItem('yahoo_sort_key', e.target.value); }catch{} }}>
+            <div className="border border-base-300 rounded-md pointer-events-auto join">
+              <select className="select-xs join-item select" value={sortKey} onChange={(e) => { setSortKey(e.target.value); try{ localStorage.setItem('yahoo_sort_key', e.target.value); }catch{} }}>
                 <option value="">Sort: None</option>
                 <optgroup label="Batters">
                   <option value="HR">HR</option>
@@ -303,7 +303,7 @@ function FantasyBaseballPanel() {
                   <option value="WHIP">WHIP</option>
                 </optgroup>
               </select>
-              <select className="join-item select select-xs" value={sortDir} onChange={(e) => { const v = e.target.value === 'asc' ? 'asc' : 'desc'; setSortDir(v); try{ localStorage.setItem('yahoo_sort_dir', v); }catch{} }}>
+              <select className="select-xs join-item select" value={sortDir} onChange={(e) => { const v = e.target.value === 'asc' ? 'asc' : 'desc'; setSortDir(v); try{ localStorage.setItem('yahoo_sort_dir', v); }catch{} }}>
                 <option value="desc">Desc</option>
                 <option value="asc">Asc</option>
               </select>
@@ -317,16 +317,16 @@ function FantasyBaseballPanel() {
       {/* Flow content */}
       {fantasyEnabled && step === 'league' && (
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="text-sm opacity-70">Select a League</div>
+          <div className="flex justify-between items-center">
+            <div className="opacity-70 text-sm">Select a League</div>
             <button className="btn btn-ghost btn-xs" onClick={fetchLeagues} disabled={loading}>Refresh</button>
           </div>
           {loading ? (
-            <div className="text-sm opacity-70">Loading leagues…</div>
+            <div className="opacity-70 text-sm">Loading leagues…</div>
           ) : leagues.length ? (
-            <div className="form-control w-full">
+            <div className="w-full form-control">
               <select
-                className="select select-sm select-bordered w-full"
+                className="w-full select-bordered select-sm select"
                 value={selectedLeague}
                 onChange={(e) => chooseLeague(e.target.value)}
               >
@@ -341,7 +341,7 @@ function FantasyBaseballPanel() {
               </select>
             </div>
           ) : (
-            <div className="text-sm opacity-70">No leagues found.</div>
+            <div className="opacity-70 text-sm">No leagues found.</div>
           )}
         </div>
       )}
@@ -352,9 +352,9 @@ function FantasyBaseballPanel() {
             <button className="link" onClick={() => setStep('league')}>Change league</button>
             <span className="opacity-60">{selectedLeague}</span>
           </div>
-          <div className="form-control w-full">
+          <div className="w-full form-control">
             <select
-              className="select select-sm select-bordered w-full"
+              className="w-full select-bordered select-sm select"
               value={selectedTeam}
               onChange={(e) => chooseTeam(e.target.value)}
             >

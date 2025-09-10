@@ -67,7 +67,7 @@ export default defineBackground(() => {
         position: state.layout?.position || 'top',
         opacity: state.layout?.opacity ?? 1.0,
         power: state.power?.mode !== false,
-        fantasyEnabled: state.fantasy?.enabled ?? true
+        fantasyEnabled: state.toggles?.YAHOO_FANTASY ?? true
       });
     } else if (message.type === 'LOGOUT_REFRESH') {
       // Handle logout refresh - notify all contexts and refresh iframe
@@ -88,7 +88,7 @@ export default defineBackground(() => {
       position: state.layout?.position || 'top',
       opacity: state.layout?.opacity ?? 1.0,
       power: state.power?.mode !== false,
-      fantasyEnabled: state.fantasy?.enabled ?? true
+      fantasyEnabled: state.toggles?.YAHOO_FANTASY ?? true
     };
 
     try {

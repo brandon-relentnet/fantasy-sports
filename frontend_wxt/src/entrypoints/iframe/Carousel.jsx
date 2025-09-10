@@ -88,15 +88,9 @@ export const Carousel = memo(function Carousel() {
   }, [tradesData?.data?.length, sportsData?.length, rssItems?.length, fantasyRoster?.length]);
 
   const showEmptyMessage = useMemo(() => {
-    // Only show the "no filters" message if none of the systems are selected
-    // Finance filters, Sports toggles, RSS feeds, or Fantasy selection
-    return (
-      !hasFinanceFilters &&
-      !hasActiveSportsToggles &&
-      !hasActiveRssFeeds &&
-      !hasFantasySelection
-    );
-  }, [hasFinanceFilters, hasActiveSportsToggles, hasActiveRssFeeds, hasFantasySelection]);
+    // Show the hint only if no items are available in the ticker
+    return !hasData;
+  }, [hasData]);
 
   // Get speed configuration based on current speed setting
   const speedConfig = useMemo(() => {
