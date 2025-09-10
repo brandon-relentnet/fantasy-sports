@@ -4,9 +4,13 @@ import { SportsSection } from "../../components/SportsSection.jsx";
 import { RssSection } from "../../components/RssSection.jsx";
 import { useAuth } from "../../components/hooks/useAuth.tsx";
 import React, { useEffect, useMemo, useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { setFantasyEnabled } from "@/entrypoints/store/fantasySlice.js";
 import { API_ENDPOINTS } from "@/entrypoints/config/endpoints.js";
 
 function FantasyBaseballPanel() {
+  const dispatch = useDispatch();
+  const fantasyEnabled = useSelector((s) => s.fantasy?.enabled ?? true);
   const SPORTS_API = "http://localhost:4000";
   const [accessToken, setAccessToken] = useState("");
   const [step, setStep] = useState("signin");
@@ -20,6 +24,8 @@ function FantasyBaseballPanel() {
   const [date, setDate] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [showExtras, setShowExtras] = useState(true);
+  const [sortKey, setSortKey] = useState(() => { try { return localStorage.getItem('yahoo_sort') || ''; } catch { return ''; } });
+  const [sortDir, setSortDir] = useState(() => { try { return localStorage.getItem('yahoo_sort_dir') || 'desc'; } catch { return 'desc'; } });
 
   // Load saved token + selections + date on mount
   useEffect(() => {
@@ -147,16 +153,28 @@ function FantasyBaseballPanel() {
   // Persist filters for iframe carousel to use
   useEffect(() => {
     try { localStorage.setItem('yahoo_filter_type', typeFilter); } catch {}
+    try { window.dispatchEvent(new StorageEvent('storage', { key: 'yahoo_filter_type', newValue: typeFilter })); } catch {}
   }, [typeFilter]);
   useEffect(() => {
     try { localStorage.setItem('yahoo_filter_showExtras', String(showExtras)); } catch {}
+    try { window.dispatchEvent(new StorageEvent('storage', { key: 'yahoo_filter_showExtras', newValue: String(showExtras) })); } catch {}
   }, [showExtras]);
   useEffect(() => {
     try { localStorage.setItem('yahoo_date_mode', dateMode); } catch {}
+    try { window.dispatchEvent(new StorageEvent('storage', { key: 'yahoo_date_mode', newValue: dateMode })); } catch {}
   }, [dateMode]);
   useEffect(() => {
     try { localStorage.setItem('yahoo_date', date); } catch {}
+    try { window.dispatchEvent(new StorageEvent('storage', { key: 'yahoo_date', newValue: date })); } catch {}
   }, [date]);
+  useEffect(() => {
+    try { localStorage.setItem('yahoo_sort', sortKey); } catch {}
+    try { window.dispatchEvent(new StorageEvent('storage', { key: 'yahoo_sort', newValue: sortKey })); } catch {}
+  }, [sortKey]);
+  useEffect(() => {
+    try { localStorage.setItem('yahoo_sort_dir', sortDir); } catch {}
+    try { window.dispatchEvent(new StorageEvent('storage', { key: 'yahoo_sort_dir', newValue: sortDir })); } catch {}
+  }, [sortDir]);
 
   async function chooseTeam(teamKey) {
     setSelectedTeam(teamKey);
@@ -230,8 +248,8 @@ function FantasyBaseballPanel() {
               <input
                 type="checkbox"
                 className="toggle toggle-primary toggle-sm"
-                checked={(() => { try { return (localStorage.getItem('yahoo_enabled') ?? 'true') === 'true'; } catch { return true; } })()}
-                onChange={(e) => { try { localStorage.setItem('yahoo_enabled', String(e.target.checked)); window.dispatchEvent(new StorageEvent('storage', { key: 'yahoo_enabled', newValue: String(e.target.checked) })); } catch {} }}
+                checked={fantasyEnabled}
+                onChange={(e) => { try { localStorage.setItem('yahoo_enabled', String(e.target.checked)); window.dispatchEvent(new StorageEvent('storage', { key: 'yahoo_enabled', newValue: String(e.target.checked) })); } catch {}; dispatch(setFantasyEnabled(e.target.checked)); }}
               />
               <span className="label-text">Enable Yahoo Fantasy</span>
             </label>
@@ -257,7 +275,35 @@ function FantasyBaseballPanel() {
               <input type="checkbox" className="checkbox checkbox-xs" checked={showExtras} onChange={(e) => setShowExtras(e.target.checked)} />
               <span className="label-text">Show Bench & IL</span>
             </label>
-            <button className="ml-auto btn btn-primary btn-xs" onClick={refreshRoster} disabled={!selectedTeam || (dateMode==='date' && !date)}>Apply</button>
+
+            {/* Sorting Controls */}
+            <div className="border border-base-300 rounded-md join">
+              <select className="join-item select select-xs" value={sortKey} onChange={(e) => setSortKey(e.target.value)}>
+                <option value="">Sort: None</option>
+                <optgroup label="Batters">
+                  <option value="HR">HR</option>
+                  <option value="RBI">RBI</option>
+                  <option value="R">R</option>
+                  <option value="H">H</option>
+                  <option value="SB">SB</option>
+                  <option value="AVG">AVG</option>
+                  <option value="OPS">OPS</option>
+                </optgroup>
+                <optgroup label="Pitchers">
+                  <option value="K">K</option>
+                  <option value="W">W</option>
+                  <option value="SV">SV</option>
+                  <option value="IP">IP</option>
+                  <option value="ERA">ERA</option>
+                  <option value="WHIP">WHIP</option>
+                </optgroup>
+              </select>
+              <select className="join-item select select-xs" value={sortDir} onChange={(e) => setSortDir(e.target.value)}>
+                <option value="desc">Desc</option>
+                <option value="asc">Asc</option>
+              </select>
+            </div>
+            {/* Auto updates; no Apply button needed */}
           </>
         )}
       </div>

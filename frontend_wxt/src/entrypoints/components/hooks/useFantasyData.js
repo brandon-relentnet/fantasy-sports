@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSelector } from 'react-redux';
 import { API_ENDPOINTS } from '@/entrypoints/config/endpoints.js';
 
 export default function useFantasyData() {
@@ -9,18 +10,21 @@ export default function useFantasyData() {
   const [showExtras, setShowExtras] = useState(true); // bench + IL
   const [dateMode, setDateMode] = useState('today'); // today | date
   const [date, setDate] = useState(''); // YYYY-MM-DD
+  const [sortKey, setSortKey] = useState(() => { try { return localStorage.getItem('yahoo_sort') || ''; } catch { return ''; } });
+  const [sortDir, setSortDir] = useState(() => { try { return localStorage.getItem('yahoo_sort_dir') || 'desc'; } catch { return 'desc'; } });
   const [accessToken, setAccessToken] = useState(() => {
     try { return localStorage.getItem('yahoo_access_token') || ''; } catch { return ''; }
   });
   const [selectedTeam, setSelectedTeam] = useState(() => {
     try { return localStorage.getItem('yahoo_selected_team') || ''; } catch { return ''; }
   });
+  const enabledRedux = useSelector((state) => state.fantasy?.enabled ?? true);
   const [enabled, setEnabled] = useState(() => {
     try {
       const v = localStorage.getItem('yahoo_enabled');
-      return v === null ? true : v === 'true';
+      return v === null ? enabledRedux : v === 'true';
     } catch {
-      return true;
+      return enabledRedux;
     }
   });
 
@@ -31,10 +35,14 @@ export default function useFantasyData() {
       const s = localStorage.getItem('yahoo_filter_showExtras');
       const dm = localStorage.getItem('yahoo_date_mode');
       const d = localStorage.getItem('yahoo_date');
+      const sk = localStorage.getItem('yahoo_sort');
+      const sd = localStorage.getItem('yahoo_sort_dir');
       if (t === 'all' || t === 'batters' || t === 'pitchers') setFilterType(t);
       if (s === 'true' || s === 'false') setShowExtras(s === 'true');
       if (dm === 'today' || dm === 'date') setDateMode(dm);
       if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) setDate(d);
+      if (sk) setSortKey(sk);
+      if (sd === 'asc' || sd === 'desc') setSortDir(sd);
     } catch {}
 
     const onStorage = (e) => {
@@ -53,10 +61,17 @@ export default function useFantasyData() {
       if (e.key === 'yahoo_date' && e.newValue && /^\d{4}-\d{2}-\d{2}$/.test(e.newValue)) {
         setDate(e.newValue);
       }
+      if (e.key === 'yahoo_sort') setSortKey(e.newValue || '');
+      if (e.key === 'yahoo_sort_dir' && (e.newValue === 'asc' || e.newValue === 'desc')) setSortDir(e.newValue);
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
   }, []);
+
+  // React to redux enabled changes immediately
+  useEffect(() => {
+    setEnabled(enabledRedux);
+  }, [enabledRedux]);
 
   useEffect(() => {
     let cancelled = false;
@@ -85,7 +100,7 @@ export default function useFantasyData() {
 
   const filteredRoster = useMemo(() => {
     const list = Array.isArray(roster) ? roster : [];
-    return list.filter((p) => {
+    const filtered = list.filter((p) => {
       const selPos = (p.selectedPosition || '').toUpperCase();
       const isBench = selPos === 'BN';
       const isIL = selPos === 'IL' || selPos === 'DL' || (Array.isArray(p.eligiblePositions) && p.eligiblePositions.includes('IL'));
@@ -95,11 +110,42 @@ export default function useFantasyData() {
       if (filterType === 'pitchers' && type === 'B') return false;
       return true;
     });
-  }, [roster, filterType, showExtras]);
+    if (!sortKey) return filtered;
+    const getVal = (pl) => {
+      switch (sortKey) {
+        case 'HR': return pl.homeRuns ?? 0;
+        case 'RBI': return pl.rbis ?? 0;
+        case 'R': return pl.runs ?? 0;
+        case 'H': return pl.hits ?? 0;
+        case 'SB': return pl.sb ?? 0;
+        case 'AVG': return typeof pl.avg === 'number' ? pl.avg : 0;
+        case 'OPS': return typeof pl.ops === 'number' ? pl.ops : 0;
+        case 'K': return pl.strikeouts ?? 0;
+        case 'W': return pl.wins ?? 0;
+        case 'L': return pl.losses ?? 0;
+        case 'SV': return pl.saves ?? 0;
+        case 'IP': return pl.ip ?? 0;
+        case 'ERA': return typeof pl.era === 'number' ? pl.era : Number.POSITIVE_INFINITY;
+        case 'WHIP': return typeof pl.whip === 'number' ? pl.whip : Number.POSITIVE_INFINITY;
+        default: return 0;
+      }
+    };
+    const sorted = [...filtered].sort((a, b) => {
+      const va = getVal(a); const vb = getVal(b);
+      if (va === vb) return 0;
+      if (sortDir === 'asc') return va < vb ? -1 : 1;
+      return va > vb ? -1 : 1;
+    });
+    return sorted;
+  }, [roster, filterType, showExtras, sortKey, sortDir]);
 
   return {
     roster: filteredRoster,
     connectionStatus,
     hasFantasySelection: !!(accessToken && selectedTeam),
+    dateMode,
+    date,
+    sortKey,
+    sortDir,
   };
 }

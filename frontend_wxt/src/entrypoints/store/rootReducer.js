@@ -6,6 +6,7 @@ import PowerReducer from "./powerSlice.js";
 import LayoutReducer from "./layoutSlice.js";
 import RssReducer from "./rssSlice.js";
 import PinnedReducer from "./pinnedSlice.js";
+import FantasyReducer from "./fantasySlice.js";
 
 const rootReducer = combineReducers({
     // Add your reducers here
@@ -16,6 +17,7 @@ const rootReducer = combineReducers({
     layout: LayoutReducer,
     rss: RssReducer,
     pinned: PinnedReducer,
+    fantasy: FantasyReducer,
 })
 
 export default rootReducer;

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useSelector } from 'react-redux';
 
-export default function FantasyCard({ player }) {
+export default function FantasyCard({ player, dateBadge }) {
   const layout = useSelector((state) => state.layout?.mode || 'compact');
   const isCompact = useMemo(() => layout === 'compact', [layout]);
   const isPitcher = (player.positionType || '').toUpperCase() === 'P';
@@ -21,6 +21,9 @@ export default function FantasyCard({ player }) {
             </div>
           </div>
           <div className="flex items-center gap-3 text-xs">
+            {dateBadge && (
+              <span className="badge badge-ghost badge-xs">{dateBadge}</span>
+            )}
             {!isPitcher ? (
               <>
                 <span>HR {player.homeRuns ?? 0}</span>
@@ -60,6 +63,11 @@ export default function FantasyCard({ player }) {
           )}
         </div>
         <div className="grid grid-cols-4 gap-2 mt-2 text-xs">
+          {dateBadge && (
+            <div className="col-span-4">
+              <span className="badge badge-ghost badge-xs">{dateBadge}</span>
+            </div>
+          )}
           {!isPitcher ? (
             <>
               <Stat label="R" val={player.runs ?? 0} />
