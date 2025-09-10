@@ -211,18 +211,20 @@ function FantasyBaseballPanel() {
     <div className="space-y-3">
       {/* Header controls */}
       <div className="flex flex-wrap items-center gap-2 relative z-50 pointer-events-auto">
-        {/* Enable Toggle (always visible) */}
-        <label className="label cursor-pointer gap-2 mr-2">
+        {/* Yahoo toggle styled like Sports/Finance */}
+        <label
+          className={`${fantasyEnabled ? 'text-base-content' : 'text-base-content/50'} .label btn btn-ghost justify-between flex items-center`}
+        >
+          Yahoo
           <input
             type="checkbox"
-            className="toggle toggle-primary toggle-sm"
+            className="toggle toggle-primary"
             checked={fantasyEnabled}
             onChange={(e) => {
               const val = e.target.checked;
               dispatch(setToggles({ ...toggles, YAHOO_FANTASY: val }));
             }}
           />
-          <span className="label-text">Enable Yahoo Fantasy</span>
         </label>
 
         {/* Rest of controls are only visible when enabled */}
@@ -296,10 +298,7 @@ function FantasyBaseballPanel() {
         )}
       </div>
 
-      {/* Hide flow content (league/team) when disabled */}
-      {!fantasyEnabled && (
-        <div className="text-xs opacity-70 pl-1">Fantasy controls are disabled.</div>
-      )}
+      {/* When disabled, hide Fantasy controls entirely */}
 
       {/* Flow content */}
       {fantasyEnabled && step === 'league' && (
