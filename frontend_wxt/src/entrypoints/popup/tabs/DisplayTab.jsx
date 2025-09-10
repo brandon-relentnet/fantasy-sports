@@ -11,6 +11,13 @@ import { API_ENDPOINTS } from "@/entrypoints/config/endpoints.js";
 function FantasyBaseballPanel() {
   const dispatch = useDispatch();
   const fantasyEnabled = useSelector((s) => s.fantasy?.enabled ?? true);
+  const [enabledLocal, setEnabledLocal] = useState(() => {
+    try { return (localStorage.getItem('yahoo_enabled') ?? 'true') === 'true'; } catch { return true; }
+  });
+  useEffect(() => {
+    // keep local toggle in sync with redux (e.g., on initial load)
+    setEnabledLocal(!!fantasyEnabled);
+  }, [fantasyEnabled]);
   const SPORTS_API = "http://localhost:4000";
   const [accessToken, setAccessToken] = useState("");
   const [step, setStep] = useState("signin");
@@ -248,8 +255,16 @@ function FantasyBaseballPanel() {
               <input
                 type="checkbox"
                 className="toggle toggle-primary toggle-sm"
-                checked={fantasyEnabled}
-                onChange={(e) => { try { localStorage.setItem('yahoo_enabled', String(e.target.checked)); window.dispatchEvent(new StorageEvent('storage', { key: 'yahoo_enabled', newValue: String(e.target.checked) })); } catch {}; dispatch(setFantasyEnabled(e.target.checked)); }}
+                checked={enabledLocal}
+                onChange={(e) => {
+                  const val = e.target.checked;
+                  setEnabledLocal(val);
+                  try {
+                    localStorage.setItem('yahoo_enabled', String(val));
+                    window.dispatchEvent(new StorageEvent('storage', { key: 'yahoo_enabled', newValue: String(val) }));
+                  } catch {}
+                  dispatch(setFantasyEnabled(val));
+                }}
               />
               <span className="label-text">Enable Yahoo Fantasy</span>
             </label>

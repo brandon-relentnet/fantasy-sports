@@ -99,6 +99,7 @@ export default function useFantasyData() {
   }, [SPORTS_API, accessToken, selectedTeam, dateMode, date]);
 
   const filteredRoster = useMemo(() => {
+    if (!enabled) return [];
     const list = Array.isArray(roster) ? roster : [];
     const filtered = list.filter((p) => {
       const selPos = (p.selectedPosition || '').toUpperCase();
@@ -142,7 +143,7 @@ export default function useFantasyData() {
   return {
     roster: filteredRoster,
     connectionStatus,
-    hasFantasySelection: !!(accessToken && selectedTeam),
+    hasFantasySelection: !!(enabled && accessToken && selectedTeam),
     dateMode,
     date,
     sortKey,
