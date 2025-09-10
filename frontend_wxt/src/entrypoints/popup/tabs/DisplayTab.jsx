@@ -211,24 +211,35 @@ function FantasyBaseballPanel() {
     <div className="space-y-3">
       {/* Header controls */}
       <div className="flex flex-wrap items-center gap-2 relative z-50 pointer-events-auto">
-        {/* Yahoo toggle styled like Sports/Finance */}
-        <label
-          className={`${fantasyEnabled ? 'text-base-content' : 'text-base-content/50'} .label btn btn-ghost justify-between flex items-center w-full`}
-        >
-          <span className="flex items-center gap-2">
-            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#6001D2] text-white text-[10px] font-bold">Y!</span>
-            <span>Yahoo</span>
-          </span>
-          <input
-            type="checkbox"
-            className="toggle toggle-primary"
-            checked={fantasyEnabled}
-            onChange={(e) => {
-              const val = e.target.checked;
-              dispatch(setToggles({ ...toggles, YAHOO_FANTASY: val }));
-            }}
-          />
-        </label>
+        {/* Yahoo + ESPN toggles (compact row, like Sports/Finance) */}
+        <div className="flex gap-2 w-full">
+          <label
+            className={`${fantasyEnabled ? 'text-base-content' : 'text-base-content/50'} .label btn btn-ghost justify-between flex items-center flex-1`}
+          >
+            <span className="flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#6001D2] text-white text-[10px] font-bold">Y!</span>
+              <span>Yahoo</span>
+            </span>
+            <input
+              type="checkbox"
+              className="toggle toggle-primary"
+              checked={fantasyEnabled}
+              onChange={(e) => {
+                const val = e.target.checked;
+                dispatch(setToggles({ ...toggles, YAHOO_FANTASY: val }));
+              }}
+            />
+          </label>
+          <div className="tooltip tooltip-bottom flex-1" data-tip="Coming soon!">
+            <label className={`text-base-content/50 .label btn btn-ghost justify-between flex items-center w-full cursor-not-allowed`}>
+              <span className="flex items-center gap-2">
+                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#C8102E] text-white text-[10px] font-bold">ES</span>
+                <span>ESPN</span>
+              </span>
+              <input type="checkbox" className="toggle toggle-primary" disabled />
+            </label>
+          </div>
+        </div>
 
         {/* Rest of controls are only visible when enabled */}
         {fantasyEnabled && (
