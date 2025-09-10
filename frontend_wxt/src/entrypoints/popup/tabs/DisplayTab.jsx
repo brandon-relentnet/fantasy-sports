@@ -300,6 +300,13 @@ function FantasyBaseballPanel() {
         )}
       </div>
 
+      {/* Quick feedback for filters (shows how many players match) */}
+      {step === 'team' && (
+        <div className="text-xs opacity-70">
+          Showing {filteredRoster.length} of {roster.length} players after filters
+        </div>
+      )}
+
       {/* Flow content */}
       {step === 'league' && (
         <div className="space-y-2">
