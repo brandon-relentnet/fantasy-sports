@@ -191,27 +191,7 @@ function FantasyBaseballPanel() {
     }
   }
 
-  const filteredRoster = useMemo(() => {
-    return (roster || []).filter((p) => {
-      const selPos = (p.selectedPosition || '').toUpperCase();
-      const isBench = selPos === 'BN';
-      const isIL = selPos === 'IL' || selPos === 'DL' || (Array.isArray(p.eligiblePositions) && p.eligiblePositions.includes('IL'));
-      if (!showExtras && (isBench || isIL)) return false;
-      const type = (p.positionType || '').toUpperCase();
-      if (typeFilter === 'batters' && type === 'P') return false;
-      if (typeFilter === 'pitchers' && type === 'B') return false;
-      return true;
-    });
-  }, [roster, showExtras, typeFilter]);
-
-  function Stat({ label, val }) {
-    return (
-      <div className="flex flex-col items-center">
-        <div className="opacity-60 text-[10px]">{label}</div>
-        <div className="font-semibold">{val}</div>
-      </div>
-    );
-  }
+  // No local filtering; Redux drives the iframe’s filtering/sorting
 
   return (
     <div className="space-y-3">
@@ -252,7 +232,7 @@ function FantasyBaseballPanel() {
             {dateMode === 'date' && (
               <div className="join pointer-events-auto">
                 <button className="join-item btn btn-xs" aria-label="Next day" onClick={() => shiftDate(1)}>↑</button>
-                <input type="date" className="input-bordered join-item input input-xs" value={date} onChange={(e) => { dispatch(setFantasyDate(e.target.value)); if (selectedTeam) setTimeout(() => refreshRoster(), 0); }} />
+                <input type="date" className="input-bordered join-item input input-xs" value={date} onChange={(e) => { dispatch(setFantasyDate(e.target.value)); }} />
                 <button className="join-item btn btn-xs" aria-label="Previous day" onClick={() => shiftDate(-1)}>↓</button>
                 <button className="join-item btn btn-xs" onClick={setToday}>Today</button>
               </div>
@@ -300,12 +280,7 @@ function FantasyBaseballPanel() {
         )}
       </div>
 
-      {/* Quick feedback for filters (shows how many players match) */}
-      {step === 'team' && (
-        <div className="text-xs opacity-70">
-          Showing {filteredRoster.length} of {roster.length} players after filters
-        </div>
-      )}
+      {/* Filters use Redux only; the carousel updates live */}
 
       {/* Flow content */}
       {step === 'league' && (
