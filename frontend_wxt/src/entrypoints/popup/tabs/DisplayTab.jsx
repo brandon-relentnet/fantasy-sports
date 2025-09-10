@@ -211,38 +211,41 @@ function FantasyBaseballPanel() {
     <div className="space-y-3">
       {/* Header controls */}
       <div className="flex flex-wrap items-center gap-2 relative z-50 pointer-events-auto">
-        {/* Access token */}
-        {step === 'signin' && (
-          <div className="flex items-center gap-2 w-full">
-            <button className="btn btn-primary btn-sm" onClick={signInWithYahoo}>Sign in with Yahoo</button>
-          </div>
-        )}
-        {accessToken && (
-          <div className="flex items-center gap-2">
-            <span className="badge badge-success badge-sm">Signed in</span>
-            <button className="btn btn-ghost btn-xs" onClick={() => { try { localStorage.removeItem('yahoo_access_token'); localStorage.removeItem('yahoo_selected_league'); localStorage.removeItem('yahoo_selected_team'); } catch {}; setAccessToken(''); setSelectedLeague(''); setSelectedTeam(''); setLeagues([]); setTeams([]); setRoster([]); setStep('signin'); }}>Sign out</button>
-          </div>
-        )}
+        {/* Enable Toggle (always visible) */}
+        <label className="label cursor-pointer gap-2 mr-2">
+          <input
+            type="checkbox"
+            className="toggle toggle-primary toggle-sm"
+            checked={fantasyEnabled}
+            onChange={(e) => {
+              const val = e.target.checked;
+              dispatch(setToggles({ ...toggles, YAHOO_FANTASY: val }));
+            }}
+          />
+          <span className="label-text">Enable Yahoo Fantasy</span>
+        </label>
 
-        {step !== 'signin' && (
+        {/* Rest of controls are only visible when enabled */}
+        {fantasyEnabled && (
           <>
-            {/* Enable Toggle */}
-            <label className="label cursor-pointer gap-2 mr-2">
-              <input
-                type="checkbox"
-                className="toggle toggle-primary toggle-sm"
-                checked={fantasyEnabled}
-                onChange={(e) => {
-                  const val = e.target.checked;
-                  dispatch(setToggles({ ...toggles, YAHOO_FANTASY: val }));
-                }}
-              />
-              <span className="label-text">Enable Yahoo Fantasy</span>
-            </label>
-                <div className="border border-base-300 rounded-md join pointer-events-auto">
-                  <button className={`join-item btn btn-xs ${dateMode==='today' ? 'btn-active' : ''}`} onClick={() => { setDateMode('today'); try{ localStorage.setItem('yahoo_date_mode','today'); }catch{} }}>Today</button>
-                  <button className={`join-item btn btn-xs ${dateMode==='date' ? 'btn-active' : ''}`} onClick={() => { setDateMode('date'); try{ localStorage.setItem('yahoo_date_mode','date'); }catch{}; if (!date) setToday(); }}>Date</button>
-                </div>
+            {/* Access token */}
+            {step === 'signin' && (
+              <div className="flex items-center gap-2 w-full">
+                <button className="btn btn-primary btn-sm" onClick={signInWithYahoo}>Sign in with Yahoo</button>
+              </div>
+            )}
+            {accessToken && (
+              <div className="flex items-center gap-2">
+                <span className="badge badge-success badge-sm">Signed in</span>
+                <button className="btn btn-ghost btn-xs" onClick={() => { try { localStorage.removeItem('yahoo_access_token'); localStorage.removeItem('yahoo_selected_league'); localStorage.removeItem('yahoo_selected_team'); } catch {}; setAccessToken(''); setSelectedLeague(''); setSelectedTeam(''); setLeagues([]); setTeams([]); setRoster([]); setStep('signin'); }}>Sign out</button>
+              </div>
+            )}
+
+            {/* Filters */}
+            <div className="border border-base-300 rounded-md join pointer-events-auto">
+              <button className={`join-item btn btn-xs ${dateMode==='today' ? 'btn-active' : ''}`} onClick={() => { setDateMode('today'); try{ localStorage.setItem('yahoo_date_mode','today'); }catch{} }}>Today</button>
+              <button className={`join-item btn btn-xs ${dateMode==='date' ? 'btn-active' : ''}`} onClick={() => { setDateMode('date'); try{ localStorage.setItem('yahoo_date_mode','date'); }catch{}; if (!date) setToday(); }}>Date</button>
+            </div>
             {dateMode === 'date' && (
               <div className="join pointer-events-auto">
                 <button className="join-item btn btn-xs" aria-label="Next day" onClick={() => shiftDate(1)}>↑</button>
@@ -252,20 +255,20 @@ function FantasyBaseballPanel() {
               </div>
             )}
 
-                <div className="border border-base-300 rounded-md join pointer-events-auto">
-                  <button className={`join-item btn btn-xs ${typeFilter==='all' ? 'btn-active' : ''}`} onClick={() => { setTypeFilter('all'); try{ localStorage.setItem('yahoo_type_filter','all'); }catch{} }}>All</button>
-                  <button className={`join-item btn btn-xs ${typeFilter==='batters' ? 'btn-active' : ''}`} onClick={() => { setTypeFilter('batters'); try{ localStorage.setItem('yahoo_type_filter','batters'); }catch{} }}>Batters</button>
-                  <button className={`join-item btn btn-xs ${typeFilter==='pitchers' ? 'btn-active' : ''}`} onClick={() => { setTypeFilter('pitchers'); try{ localStorage.setItem('yahoo_type_filter','pitchers'); }catch{} }}>Pitchers</button>
-                </div>
-                <label className="gap-2 cursor-pointer label pointer-events-auto">
-                  <input type="checkbox" className="checkbox checkbox-xs" checked={showExtras} onChange={(e) => { setShowExtras(e.target.checked); try{ localStorage.setItem('yahoo_show_extras', String(e.target.checked)); }catch{} }} />
-                  <span className="label-text">Show Bench & IL</span>
-                </label>
+            <div className="border border-base-300 rounded-md join pointer-events-auto">
+              <button className={`join-item btn btn-xs ${typeFilter==='all' ? 'btn-active' : ''}`} onClick={() => { setTypeFilter('all'); try{ localStorage.setItem('yahoo_type_filter','all'); }catch{} }}>All</button>
+              <button className={`join-item btn btn-xs ${typeFilter==='batters' ? 'btn-active' : ''}`} onClick={() => { setTypeFilter('batters'); try{ localStorage.setItem('yahoo_type_filter','batters'); }catch{} }}>Batters</button>
+              <button className={`join-item btn btn-xs ${typeFilter==='pitchers' ? 'btn-active' : ''}`} onClick={() => { setTypeFilter('pitchers'); try{ localStorage.setItem('yahoo_type_filter','pitchers'); }catch{} }}>Pitchers</button>
+            </div>
+            <label className="gap-2 cursor-pointer label pointer-events-auto">
+              <input type="checkbox" className="checkbox checkbox-xs" checked={showExtras} onChange={(e) => { setShowExtras(e.target.checked); try{ localStorage.setItem('yahoo_show_extras', String(e.target.checked)); }catch{} }} />
+              <span className="label-text">Show Bench & IL</span>
+            </label>
 
             {/* Sorting Controls */}
-                <div className="border border-base-300 rounded-md join pointer-events-auto">
-                  <select className="join-item select select-xs" value={sortKey} onChange={(e) => { setSortKey(e.target.value); try{ localStorage.setItem('yahoo_sort_key', e.target.value); }catch{} }}>
-                    <option value="">Sort: None</option>
+            <div className="border border-base-300 rounded-md join pointer-events-auto">
+              <select className="join-item select select-xs" value={sortKey} onChange={(e) => { setSortKey(e.target.value); try{ localStorage.setItem('yahoo_sort_key', e.target.value); }catch{} }}>
+                <option value="">Sort: None</option>
                 <optgroup label="Batters">
                   <option value="HR">HR</option>
                   <option value="RBI">RBI</option>
@@ -284,20 +287,22 @@ function FantasyBaseballPanel() {
                   <option value="WHIP">WHIP</option>
                 </optgroup>
               </select>
-                  <select className="join-item select select-xs" value={sortDir} onChange={(e) => { const v = e.target.value === 'asc' ? 'asc' : 'desc'; setSortDir(v); try{ localStorage.setItem('yahoo_sort_dir', v); }catch{} }}>
-                    <option value="desc">Desc</option>
-                    <option value="asc">Asc</option>
-                  </select>
-                </div>
-            {/* Auto updates; no Apply button needed */}
+              <select className="join-item select select-xs" value={sortDir} onChange={(e) => { const v = e.target.value === 'asc' ? 'asc' : 'desc'; setSortDir(v); try{ localStorage.setItem('yahoo_sort_dir', v); }catch{} }}>
+                <option value="desc">Desc</option>
+                <option value="asc">Asc</option>
+              </select>
+            </div>
           </>
         )}
       </div>
 
-      {/* Filters use Redux only; the carousel updates live */}
+      {/* Hide flow content (league/team) when disabled */}
+      {!fantasyEnabled && (
+        <div className="text-xs opacity-70 pl-1">Fantasy controls are disabled.</div>
+      )}
 
       {/* Flow content */}
-      {step === 'league' && (
+      {fantasyEnabled && step === 'league' && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="text-sm opacity-70">Select a League</div>
@@ -328,7 +333,7 @@ function FantasyBaseballPanel() {
         </div>
       )}
 
-      {step === 'team' && (
+      {fantasyEnabled && step === 'team' && (
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm">
             <button className="link" onClick={() => setStep('league')}>Change league</button>
