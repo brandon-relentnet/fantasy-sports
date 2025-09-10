@@ -213,9 +213,12 @@ function FantasyBaseballPanel() {
       <div className="flex flex-wrap items-center gap-2 relative z-50 pointer-events-auto">
         {/* Yahoo toggle styled like Sports/Finance */}
         <label
-          className={`${fantasyEnabled ? 'text-base-content' : 'text-base-content/50'} .label btn btn-ghost justify-between flex items-center`}
+          className={`${fantasyEnabled ? 'text-base-content' : 'text-base-content/50'} .label btn btn-ghost justify-between flex items-center w-full`}
         >
-          Yahoo
+          <span className="flex items-center gap-2">
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#6001D2] text-white text-[10px] font-bold">Y!</span>
+            <span>Yahoo</span>
+          </span>
           <input
             type="checkbox"
             className="toggle toggle-primary"
