@@ -1,18 +1,33 @@
 import path from 'path';
-import dotenv from 'dotenv';
-// Load .env from backend dir and also support root fallbacks
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
-dotenv.config({ path: path.resolve(process.cwd(), '.env') });
-dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
-import express, { Request, Response } from 'express';
 import fs from 'fs';
+import dotenv from 'dotenv';
+import express, { Request, Response } from 'express';
 import https from 'https';
 import cors from 'cors';
 import { YahooFantasyAPI } from './lib/yahooApi';
 
+// Load environment variables from both the service folder and the backend root.
+const envCandidates = [
+  path.resolve(__dirname, '../.env'),            // backend/fantasy-yahoo/.env
+  path.resolve(__dirname, '../.env.local'),      // backend/fantasy-yahoo/.env.local
+  path.resolve(__dirname, '../../.env'),         // backend/.env (shared backend config)
+  path.resolve(__dirname, '../../.env.local'),   // backend/.env.local (shared overrides)
+  path.resolve(process.cwd(), '.env'),
+  path.resolve(process.cwd(), '.env.local'),
+];
+
+for (const candidate of envCandidates) {
+  if (fs.existsSync(candidate)) {
+    dotenv.config({ path: candidate, override: false });
+  }
+}
+
 const app = express();
-const PORT = Number(process.env.PORT) || 4000;
-const TLS_PORT = Number(process.env.PORT_TLS) || 4443;
+const PORT = Number(process.env.FANTASY_YAHOO_PORT || process.env.PORT || 4002);
+const HOST = process.env.FANTASY_YAHOO_HOST || '0.0.0.0';
+const TLS_PORT = Number(process.env.FANTASY_YAHOO_TLS_PORT || process.env.PORT_TLS || 4443);
+const publicBaseUrl = (process.env.FANTASY_YAHOO_EXTERNAL_URL || '').trim() || `http://localhost:${PORT}`;
+const normalizedBaseUrl = publicBaseUrl.replace(/\/$/, '');
 // For development/testing: allow all origins. Switch to an allowlist for production.
 app.use(cors({
   origin: true,
@@ -47,7 +62,7 @@ app.get('/leagues', async (req: Request, res: Response) => {
 // Yahoo OAuth: start -> redirect to Yahoo auth
 app.get('/auth/yahoo/start', (req: Request, res: Response) => {
   const clientId = process.env.YAHOO_CLIENT_ID;
-  const redirectUri = process.env.YAHOO_REDIRECT_URI || `http://localhost:${PORT}/auth/yahoo/callback`;
+  const redirectUri = process.env.YAHOO_REDIRECT_URI || `${normalizedBaseUrl}/auth/yahoo/callback`;
   if (!clientId) return res.status(500).send('Yahoo client ID not configured');
   const params = new URLSearchParams({
     client_id: clientId,
@@ -66,7 +81,7 @@ app.get('/auth/yahoo/callback', async (req: Request, res: Response) => {
     const code = (req.query.code as string) || '';
     const clientId = process.env.YAHOO_CLIENT_ID!;
     const clientSecret = process.env.YAHOO_CLIENT_SECRET!;
-    const redirectUri = process.env.YAHOO_REDIRECT_URI || `http://localhost:${PORT}/auth/yahoo/callback`;
+    const redirectUri = process.env.YAHOO_REDIRECT_URI || `${normalizedBaseUrl}/auth/yahoo/callback`;
     if (!clientId || !clientSecret) return res.status(500).send('Yahoo credentials not configured');
     const authHeader = Buffer.from(`${clientId}:${clientSecret}`, 'binary').toString('base64');
     const body = new URLSearchParams({
@@ -116,7 +131,7 @@ app.get('/auth/yahoo/config', (_req: Request, res: Response) => {
   res.json({
     hasClientId: !!process.env.YAHOO_CLIENT_ID,
     hasClientSecret: !!process.env.YAHOO_CLIENT_SECRET,
-    redirectUri: process.env.YAHOO_REDIRECT_URI || `http://localhost:${PORT}/auth/yahoo/callback`,
+    redirectUri: process.env.YAHOO_REDIRECT_URI || `${normalizedBaseUrl}/auth/yahoo/callback`,
   });
 });
 
@@ -184,39 +199,46 @@ app.get('/team/:teamKey/test-endpoints', async (req: Request, res: Response) => 
   catch { res.status(500).json({ error: 'Failed to test endpoints' }); }
 });
 
-app.listen(PORT, () => {
-  console.log(`Backend listening on http://localhost:${PORT}`);
-});
-
-// Optionally also start HTTPS for OAuth callbacks if certs exist
-try {
-  const candidates = [
-    path.resolve(__dirname, '..', '..', 'certificates'),          // repo root /certificates
-    path.resolve(__dirname, '..', 'certificates'),                 // backend/certificates
-    path.resolve(__dirname, '..', '..', 'frontend', 'certificates')// frontend/certificates
-  ];
-  console.log('HTTPS cert search paths:', candidates);
-  let keyPath: string | null = null;
-  let certPath: string | null = null;
-  for (const dir of candidates) {
-    const k = path.join(dir, 'localhost.key');
-    const c = path.join(dir, 'localhost.crt');
-    if (fs.existsSync(k) && fs.existsSync(c)) { keyPath = k; certPath = c; break; }
-  }
-  if (keyPath && certPath) {
-    const httpsOptions = { key: fs.readFileSync(keyPath), cert: fs.readFileSync(certPath) };
-    https.createServer(httpsOptions, app).listen(TLS_PORT, () => {
-      console.log(`Backend HTTPS listening on https://localhost:${TLS_PORT} (certs: ${path.dirname(keyPath!)})`);
-    });
-  } else {
-    console.log('HTTPS certificates not found in any known location; set YAHOO_REDIRECT_URI to http and register it in Yahoo dev, or add certs.');
-  }
-} catch (e) {
-  console.warn('Failed to start HTTPS server:', e);
-}
-
 // Simple health and callback test endpoints
 app.get('/health', (_req: Request, res: Response) => res.json({ ok: true }));
 app.get('/auth/yahoo/callback/test', (_req: Request, res: Response) => {
   res.setHeader('Content-Type', 'text/html').send('<!doctype html><html><body>Callback reachable.</body></html>');
 });
+
+app.listen(PORT, HOST, () => {
+  console.log(`✅ Fantasy Yahoo server running on port ${PORT}`);
+  console.log(`🌐 REST API base: http://localhost:${PORT}`);
+  console.log(`❤️  Health: http://localhost:${PORT}/health`);
+});
+
+// Optionally also start HTTPS for OAuth callbacks if certs exist and explicitly enabled.
+const enableLocalTls = process.env.FANTASY_YAHOO_ENABLE_LOCAL_TLS === 'true';
+if (enableLocalTls) {
+  try {
+    const candidates = [
+      path.resolve(__dirname, '..', '..', 'certificates'),          // repo root /certificates
+      path.resolve(__dirname, '..', 'certificates'),                 // backend/certificates
+      path.resolve(__dirname, '..', '..', 'frontend', 'certificates')// frontend/certificates
+    ];
+    console.log('HTTPS cert search paths:', candidates);
+    let keyPath: string | null = null;
+    let certPath: string | null = null;
+    for (const dir of candidates) {
+      const k = path.join(dir, 'localhost.key');
+      const c = path.join(dir, 'localhost.crt');
+      if (fs.existsSync(k) && fs.existsSync(c)) { keyPath = k; certPath = c; break; }
+    }
+    if (keyPath && certPath) {
+      const httpsOptions = { key: fs.readFileSync(keyPath), cert: fs.readFileSync(certPath) };
+      https.createServer(httpsOptions, app).listen(TLS_PORT, () => {
+        console.log(`Backend HTTPS listening on https://localhost:${TLS_PORT} (certs: ${path.dirname(keyPath!)})`);
+      });
+    } else {
+      console.log('HTTPS certificates not found in any known location; set YAHOO_REDIRECT_URI to http and register it in Yahoo dev, or add certs.');
+    }
+  } catch (e) {
+    console.warn('Failed to start HTTPS server:', e);
+  }
+} else {
+  console.log('Local HTTPS disabled; relying on reverse proxy for TLS termination.');
+}

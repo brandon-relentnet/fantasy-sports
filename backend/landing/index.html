@@ -1,0 +1,2194 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scrollr API Hub - Interactive Documentation</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, sans-serif;
+        background: #0a0a0a;
+        color: #e0e0e0;
+        line-height: 1.6;
+        overflow-x: hidden;
+      }
+
+      /* Header */
+      .header {
+        background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+        padding: 2rem 0;
+        border-bottom: 1px solid #333;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+
+      .header-content {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .logo-section {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      h1 {
+        font-size: 2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .environment-badge {
+        background: #4ade80;
+        color: #000;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 600;
+      }
+
+      /* Health Monitor */
+      .health-monitor {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+      }
+
+      .health-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: #1a1a1a;
+        border: 1px solid #333;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .health-item:hover {
+        border-color: #667eea;
+      }
+
+      .health-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #4ade80;
+        animation: pulse 2s infinite;
+      }
+
+      .health-dot.error {
+        background: #ef4444;
+      }
+
+      .health-dot.warning {
+        background: #f59e0b;
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.8;
+          transform: scale(1.2);
+        }
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      /* Main Container */
+      .main-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+      }
+
+      /* Tab Navigation */
+      .tab-nav {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        border-bottom: 1px solid #333;
+        overflow-x: auto;
+      }
+
+      .tab-button {
+        background: none;
+        border: none;
+        color: #999;
+        padding: 1rem 1.5rem;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        border-bottom: 2px solid transparent;
+        white-space: nowrap;
+      }
+
+      .tab-button:hover {
+        color: #e0e0e0;
+      }
+
+      .tab-button.active {
+        color: #667eea;
+        border-bottom-color: #667eea;
+      }
+
+      .tab-content {
+        display: none;
+      }
+
+      .tab-content.active {
+        display: block;
+      }
+
+      /* Service Cards */
+      .service-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 2rem;
+        margin-bottom: 2rem;
+      }
+
+      .service-card {
+        background: #1a1a1a;
+        border: 1px solid #333;
+        border-radius: 12px;
+        overflow: hidden;
+        transition: transform 0.3s, box-shadow 0.3s;
+      }
+
+      .service-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(102, 126, 234, 0.1);
+      }
+
+      .service-header {
+        background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
+        padding: 1.5rem;
+        border-bottom: 1px solid #333;
+      }
+
+      .service-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .service-description {
+        color: #999;
+        font-size: 0.9rem;
+      }
+
+      .service-body {
+        padding: 1.5rem;
+      }
+
+      /* API Tester */
+      .api-tester {
+        background: #1a1a1a;
+        border: 1px solid #333;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+      }
+
+      .tester-form {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .method-select {
+        background: #0a0a0a;
+        border: 1px solid #333;
+        color: #e0e0e0;
+        padding: 0.75rem 1rem;
+        border-radius: 6px;
+        font-size: 1rem;
+        min-width: 100px;
+      }
+
+      .url-input {
+        background: #0a0a0a;
+        border: 1px solid #333;
+        color: #e0e0e0;
+        padding: 0.75rem 1rem;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-family: "Courier New", monospace;
+      }
+
+      .send-button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .send-button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      }
+
+      .send-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      /* Headers Section */
+      .headers-section {
+        margin-bottom: 1.5rem;
+      }
+
+      .section-title {
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        color: #667eea;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+      }
+
+      .header-input {
+        display: grid;
+        grid-template-columns: 200px 1fr auto;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .header-input input {
+        background: #0a0a0a;
+        border: 1px solid #333;
+        color: #e0e0e0;
+        padding: 0.5rem 0.75rem;
+        border-radius: 4px;
+        font-size: 0.875rem;
+      }
+
+      .add-header-btn {
+        background: #333;
+        color: #e0e0e0;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.875rem;
+      }
+
+      /* Response Section */
+      .response-section {
+        background: #0a0a0a;
+        border: 1px solid #333;
+        border-radius: 8px;
+        padding: 1.5rem;
+        min-height: 200px;
+      }
+
+      .response-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #333;
+      }
+
+      .status-code {
+        font-family: "Courier New", monospace;
+        font-weight: 600;
+      }
+
+      .status-code.success {
+        color: #4ade80;
+      }
+
+      .status-code.error {
+        color: #ef4444;
+      }
+
+      .response-time {
+        color: #999;
+        font-size: 0.875rem;
+      }
+
+      .response-body {
+        font-family: "Courier New", monospace;
+        font-size: 0.875rem;
+        white-space: pre-wrap;
+        word-break: break-all;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+
+      /* WebSocket Tester */
+      .ws-tester {
+        background: #1a1a1a;
+        border: 1px solid #333;
+        border-radius: 12px;
+        padding: 2rem;
+      }
+
+      .ws-controls {
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .ws-url-input {
+        background: #0a0a0a;
+        border: 1px solid #333;
+        color: #e0e0e0;
+        padding: 0.75rem 1rem;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-family: "Courier New", monospace;
+      }
+
+      .connect-button {
+        background: #4ade80;
+        color: #000;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .disconnect-button {
+        background: #ef4444;
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .ws-message-section {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .ws-message-input {
+        background: #0a0a0a;
+        border: 1px solid #333;
+        color: #e0e0e0;
+        padding: 0.75rem 1rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-family: "Courier New", monospace;
+      }
+
+      .ws-log {
+        background: #0a0a0a;
+        border: 1px solid #333;
+        border-radius: 8px;
+        padding: 1rem;
+        height: 300px;
+        overflow-y: auto;
+        font-family: "Courier New", monospace;
+        font-size: 0.875rem;
+      }
+
+      .ws-log-entry {
+        margin-bottom: 0.5rem;
+        padding: 0.5rem;
+        border-left: 3px solid transparent;
+      }
+
+      .ws-log-entry.sent {
+        border-left-color: #667eea;
+      }
+
+      .ws-log-entry.received {
+        border-left-color: #4ade80;
+      }
+
+      .ws-log-entry.error {
+        border-left-color: #ef4444;
+      }
+
+      .ws-log-entry.system {
+        border-left-color: #f59e0b;
+        color: #999;
+      }
+
+      /* Quick Examples */
+      .examples-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      .example-card {
+        background: #0a0a0a;
+        border: 1px solid #333;
+        border-radius: 8px;
+        padding: 1rem;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .example-card:hover {
+        border-color: #667eea;
+        transform: translateY(-1px);
+      }
+
+      .example-title {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #667eea;
+      }
+
+      .example-code {
+        font-family: "Courier New", monospace;
+        font-size: 0.75rem;
+        color: #999;
+      }
+
+      /* Documentation */
+      .doc-section {
+        background: #1a1a1a;
+        border: 1px solid #333;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+      }
+
+      .endpoint-docs {
+        display: grid;
+        gap: 1.5rem;
+      }
+
+      .endpoint-doc {
+        background: #0a0a0a;
+        border: 1px solid #333;
+        border-radius: 8px;
+        padding: 1.5rem;
+      }
+
+      .endpoint-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .method-badge {
+        background: #667eea;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        min-width: 60px;
+        text-align: center;
+      }
+
+      .method-badge.get {
+        background: #4ade80;
+        color: #000;
+      }
+      .method-badge.post {
+        background: #3b82f6;
+      }
+      .method-badge.put {
+        background: #f59e0b;
+        color: #000;
+      }
+      .method-badge.delete {
+        background: #ef4444;
+      }
+
+      .endpoint-path {
+        font-family: "Courier New", monospace;
+        font-size: 1rem;
+        color: #e0e0e0;
+      }
+
+      .endpoint-description {
+        color: #999;
+        margin-bottom: 1rem;
+      }
+
+      .param-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+      }
+
+      .param-table th {
+        text-align: left;
+        padding: 0.5rem;
+        border-bottom: 1px solid #333;
+        color: #667eea;
+        font-size: 0.875rem;
+      }
+
+      .param-table td {
+        padding: 0.5rem;
+        border-bottom: 1px solid #222;
+        font-size: 0.875rem;
+      }
+
+      .param-name {
+        font-family: "Courier New", monospace;
+        color: #e0e0e0;
+      }
+
+      .param-type {
+        color: #f59e0b;
+        font-family: "Courier New", monospace;
+        font-size: 0.75rem;
+      }
+
+      .param-required {
+        background: #ef4444;
+        color: white;
+        padding: 0.125rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+      }
+
+      .param-optional {
+        background: #333;
+        color: #999;
+        padding: 0.125rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+      }
+
+      /* Copy Button */
+      .copy-button {
+        background: #333;
+        color: #e0e0e0;
+        border: none;
+        padding: 0.25rem 0.75rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .copy-button:hover {
+        background: #444;
+      }
+
+      .copy-button.copied {
+        background: #4ade80;
+        color: #000;
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        .header-content {
+          flex-direction: column;
+          gap: 1rem;
+        }
+
+        .service-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .tester-form {
+          grid-template-columns: 1fr;
+        }
+
+        .ws-controls {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header -->
+    <header class="header">
+      <div class="header-content">
+        <div class="logo-section">
+          <h1>Scrollr API Hub</h1>
+          <span class="environment-badge" id="environment">Production</span>
+        </div>
+        <div class="health-monitor" id="health-monitor">
+          <div class="health-item" data-service="accounts" title="Accounts Service Status">
+            <span class="health-dot" id="health-accounts"></span>
+            <span>Accounts</span>
+            <span class="health-details" id="health-accounts-details" style="font-size: 0.75rem; color: #999; margin-left: 0.25rem;"></span>
+          </div>
+          <div class="health-item" data-service="finance" title="Finance Service Status">
+            <span class="health-dot" id="health-finance"></span>
+            <span>Finance</span>
+            <span class="health-details" id="health-finance-details" style="font-size: 0.75rem; color: #999; margin-left: 0.25rem;"></span>
+          </div>
+          <div class="health-item" data-service="sports" title="Sports Service Status">
+            <span class="health-dot" id="health-sports"></span>
+            <span>Sports</span>
+            <span class="health-details" id="health-sports-details" style="font-size: 0.75rem; color: #999; margin-left: 0.25rem;"></span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+      <!-- Tab Navigation -->
+      <div class="tab-nav">
+        <button class="tab-button active" onclick="showTab('overview')">
+          Overview
+        </button>
+        <button class="tab-button" onclick="showTab('api-tester')">
+          API Tester
+        </button>
+        <button class="tab-button" onclick="showTab('websocket')">
+          WebSocket Tester
+        </button>
+        <button class="tab-button" onclick="showTab('documentation')">
+          Documentation
+        </button>
+        <button class="tab-button" onclick="showTab('examples')">
+          Code Examples
+        </button>
+      </div>
+
+      <!-- Overview Tab -->
+      <div id="overview" class="tab-content active">
+        <div class="service-grid">
+          <!-- Accounts Service -->
+          <div class="service-card">
+            <div class="service-header">
+              <h3 class="service-title"><span>👤</span> Accounts Service</h3>
+              <p class="service-description">
+                User authentication, profile management, and settings
+              </p>
+            </div>
+            <div class="service-body">
+              <div class="section-title">Quick Stats</div>
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: 1fr 1fr;
+                  gap: 1rem;
+                  margin-bottom: 1.5rem;
+                "
+              >
+                <div
+                  style="
+                    background: #0a0a0a;
+                    padding: 1rem;
+                    border-radius: 6px;
+                    text-align: center;
+                  "
+                >
+                  <div
+                    style="font-size: 2rem; font-weight: 600; color: #667eea"
+                  >
+                    15
+                  </div>
+                  <div style="color: #999; font-size: 0.875rem">Endpoints</div>
+                </div>
+                <div
+                  style="
+                    background: #0a0a0a;
+                    padding: 1rem;
+                    border-radius: 6px;
+                    text-align: center;
+                  "
+                >
+                  <div
+                    style="font-size: 2rem; font-weight: 600; color: #4ade80"
+                    id="accounts-uptime"
+                  >
+                    99.9%
+                  </div>
+                  <div style="color: #999; font-size: 0.875rem">Uptime</div>
+                </div>
+              </div>
+
+              <div class="section-title">Key Features</div>
+              <ul style="list-style: none; padding: 0">
+                <li style="padding: 0.5rem 0; border-bottom: 1px solid #333">
+                  ✓ JWT-based authentication
+                </li>
+                <li style="padding: 0.5rem 0; border-bottom: 1px solid #333">
+                  ✓ User profile management
+                </li>
+                <li style="padding: 0.5rem 0; border-bottom: 1px solid #333">
+                  ✓ RSS feed management
+                </li>
+                <li style="padding: 0.5rem 0">✓ Admin capabilities</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Finance Service -->
+          <div class="service-card">
+            <div class="service-header">
+              <h3 class="service-title"><span>💰</span> Finance Service</h3>
+              <p class="service-description">
+                Real-time market data and WebSocket streams
+              </p>
+            </div>
+            <div class="service-body">
+              <div class="section-title">Quick Stats</div>
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: 1fr 1fr;
+                  gap: 1rem;
+                  margin-bottom: 1.5rem;
+                "
+              >
+                <div
+                  style="
+                    background: #0a0a0a;
+                    padding: 1rem;
+                    border-radius: 6px;
+                    text-align: center;
+                  "
+                >
+                  <div
+                    style="font-size: 2rem; font-weight: 600; color: #667eea"
+                    id="ws-connections"
+                  >
+                    0
+                  </div>
+                  <div style="color: #999; font-size: 0.875rem">Active WS</div>
+                </div>
+                <div
+                  style="
+                    background: #0a0a0a;
+                    padding: 1rem;
+                    border-radius: 6px;
+                    text-align: center;
+                  "
+                >
+                  <div
+                    style="font-size: 2rem; font-weight: 600; color: #4ade80"
+                    id="finance-symbols"
+                  >
+                    50+
+                  </div>
+                  <div style="color: #999; font-size: 0.875rem">Symbols</div>
+                </div>
+              </div>
+
+              <div class="section-title">Key Features</div>
+              <ul style="list-style: none; padding: 0">
+                <li style="padding: 0.5rem 0; border-bottom: 1px solid #333">
+                  ✓ Real-time WebSocket updates
+                </li>
+                <li style="padding: 0.5rem 0; border-bottom: 1px solid #333">
+                  ✓ Finnhub integration
+                </li>
+                <li style="padding: 0.5rem 0; border-bottom: 1px solid #333">
+                  ✓ Advanced filtering
+                </li>
+                <li style="padding: 0.5rem 0">✓ Historical data access</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Sports Service -->
+          <div class="service-card">
+            <div class="service-header">
+              <h3 class="service-title"><span>⚽</span> Sports Service</h3>
+              <p class="service-description">
+                Live sports scores and game updates
+              </p>
+            </div>
+            <div class="service-body">
+              <div class="section-title">Quick Stats</div>
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: 1fr 1fr;
+                  gap: 1rem;
+                  margin-bottom: 1.5rem;
+                "
+              >
+                <div
+                  style="
+                    background: #0a0a0a;
+                    padding: 1rem;
+                    border-radius: 6px;
+                    text-align: center;
+                  "
+                >
+                  <div
+                    style="font-size: 2rem; font-weight: 600; color: #667eea"
+                  >
+                    4
+                  </div>
+                  <div style="color: #999; font-size: 0.875rem">Leagues</div>
+                </div>
+                <div
+                  style="
+                    background: #0a0a0a;
+                    padding: 1rem;
+                    border-radius: 6px;
+                    text-align: center;
+                  "
+                >
+                  <div
+                    style="font-size: 2rem; font-weight: 600; color: #4ade80"
+                    id="live-games"
+                  >
+                    0
+                  </div>
+                  <div style="color: #999; font-size: 0.875rem">Live Games</div>
+                </div>
+              </div>
+
+              <div class="section-title">Supported Leagues</div>
+              <ul style="list-style: none; padding: 0">
+                <li style="padding: 0.5rem 0; border-bottom: 1px solid #333">
+                  🏈 NFL - National Football League
+                </li>
+                <li style="padding: 0.5rem 0; border-bottom: 1px solid #333">
+                  🏀 NBA - National Basketball Association
+                </li>
+                <li style="padding: 0.5rem 0; border-bottom: 1px solid #333">
+                  ⚾ MLB - Major League Baseball
+                </li>
+                <li style="padding: 0.5rem 0">
+                  🏒 NHL - National Hockey League
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- API Tester Tab -->
+      <div id="api-tester" class="tab-content">
+        <div class="api-tester">
+          <h2 style="margin-bottom: 1.5rem">Interactive API Tester</h2>
+
+          <div class="tester-form">
+            <select id="method" class="method-select">
+              <option value="GET">GET</option>
+              <option value="POST">POST</option>
+              <option value="PUT">PUT</option>
+              <option value="DELETE">DELETE</option>
+            </select>
+            <input
+              type="text"
+              id="url"
+              class="url-input"
+              placeholder="/api/accounts/health"
+              value="/api/accounts/health"
+            />
+            <button class="send-button" onclick="sendRequest()">
+              Send Request
+            </button>
+          </div>
+
+          <div class="headers-section">
+            <div class="section-title">Headers</div>
+            <div id="headers-container">
+              <div class="header-input">
+                <input
+                  type="text"
+                  placeholder="Header name"
+                  value="Content-Type"
+                />
+                <input
+                  type="text"
+                  placeholder="Header value"
+                  value="application/json"
+                />
+                <button class="add-header-btn" onclick="addHeader()">
+                  + Add
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="headers-section">
+            <div class="section-title">Request Body (for POST/PUT)</div>
+            <textarea
+              id="request-body"
+              class="url-input"
+              style="
+                width: 100%;
+                min-height: 100px;
+                font-family: 'Courier New', monospace;
+              "
+              placeholder='{"key": "value"}'
+            ></textarea>
+          </div>
+
+          <div class="response-section">
+            <div class="response-header">
+              <div>
+                <span class="section-title">Response</span>
+                <span class="status-code" id="status-code"></span>
+              </div>
+              <div class="response-time" id="response-time"></div>
+            </div>
+            <pre class="response-body" id="response-body">
+Click "Send Request" to test an API endpoint...</pre
+            >
+          </div>
+
+          <div class="section-title" style="margin-top: 2rem">
+            Quick Commands - Health & Status
+          </div>
+          <div class="examples-grid">
+            <div class="example-card" onclick="loadExample('accounts-health')">
+              <div class="example-title">Accounts Health</div>
+              <div class="example-code">GET /api/accounts/health</div>
+            </div>
+            <div class="example-card" onclick="loadExample('finance-health')">
+              <div class="example-title">Finance Health</div>
+              <div class="example-code">GET /api/finance/health</div>
+            </div>
+            <div class="example-card" onclick="loadExample('sports-health')">
+              <div class="example-title">Sports Health</div>
+              <div class="example-code">GET /api/sports/health</div>
+            </div>
+            <div class="example-card" onclick="loadExample('accounts-root')">
+              <div class="example-title">Accounts Service</div>
+              <div class="example-code">GET /api/accounts/</div>
+            </div>
+          </div>
+
+          <div class="section-title" style="margin-top: 2rem">
+            Quick Commands - Authentication
+          </div>
+          <div class="examples-grid">
+            <div class="example-card" onclick="loadExample('register')">
+              <div class="example-title">Register User</div>
+              <div class="example-code">POST /api/accounts/auth/register</div>
+            </div>
+            <div class="example-card" onclick="loadExample('login')">
+              <div class="example-title">User Login</div>
+              <div class="example-code">POST /api/accounts/auth/login</div>
+            </div>
+            <div class="example-card" onclick="loadExample('profile')">
+              <div class="example-title">Get Profile</div>
+              <div class="example-code">GET /api/accounts/auth/me</div>
+            </div>
+            <div class="example-card" onclick="loadExample('update-profile')">
+              <div class="example-title">Update Profile</div>
+              <div class="example-code">PUT /api/accounts/auth/profile</div>
+            </div>
+          </div>
+
+          <div class="section-title" style="margin-top: 2rem">
+            Quick Commands - Finance Data
+          </div>
+          <div class="examples-grid">
+            <div class="example-card" onclick="loadExample('all-trades')">
+              <div class="example-title">All Trades</div>
+              <div class="example-code">GET /api/finance/trades</div>
+            </div>
+            <div class="example-card" onclick="loadExample('aapl-trades')">
+              <div class="example-title">AAPL Trades</div>
+              <div class="example-code">GET /api/finance/trades/symbol/AAPL</div>
+            </div>
+            <div class="example-card" onclick="loadExample('googl-trades')">
+              <div class="example-title">GOOGL Trades</div>
+              <div class="example-code">GET /api/finance/trades/symbol/GOOGL</div>
+            </div>
+            <div class="example-card" onclick="loadExample('tsla-trades')">
+              <div class="example-title">TSLA Trades</div>
+              <div class="example-code">GET /api/finance/trades/symbol/TSLA</div>
+            </div>
+          </div>
+
+          <div class="section-title" style="margin-top: 2rem">
+            Quick Commands - Sports Data
+          </div>
+          <div class="examples-grid">
+            <div class="example-card" onclick="loadExample('all-games')">
+              <div class="example-title">All Games</div>
+              <div class="example-code">GET /api/sports/games</div>
+            </div>
+            <div class="example-card" onclick="loadExample('nfl-games')">
+              <div class="example-title">NFL Games</div>
+              <div class="example-code">GET /api/sports/games/NFL</div>
+            </div>
+            <div class="example-card" onclick="loadExample('nba-games')">
+              <div class="example-title">NBA Games</div>
+              <div class="example-code">GET /api/sports/games/NBA</div>
+            </div>
+            <div class="example-card" onclick="loadExample('mlb-games')">
+              <div class="example-title">MLB Games</div>
+              <div class="example-code">GET /api/sports/games/MLB</div>
+            </div>
+          </div>
+
+          <div class="section-title" style="margin-top: 2rem">
+            Quick Commands - User Settings
+          </div>
+          <div class="examples-grid">
+            <div class="example-card" onclick="loadExample('get-settings')">
+              <div class="example-title">Get Settings</div>
+              <div class="example-code">GET /api/accounts/auth/settings</div>
+            </div>
+            <div class="example-card" onclick="loadExample('update-settings')">
+              <div class="example-title">Update Settings</div>
+              <div class="example-code">POST /api/accounts/auth/settings</div>
+            </div>
+            <div class="example-card" onclick="loadExample('get-rss')">
+              <div class="example-title">Get RSS Feeds</div>
+              <div class="example-code">GET /api/accounts/auth/rss-feeds</div>
+            </div>
+            <div class="example-card" onclick="loadExample('add-rss')">
+              <div class="example-title">Add RSS Feed</div>
+              <div class="example-code">POST /api/accounts/auth/rss-feeds</div>
+            </div>
+          </div>
+
+          <div class="section-title" style="margin-top: 2rem">
+            Quick Commands - Admin (Auth Required)
+          </div>
+          <div class="examples-grid">
+            <div class="example-card" onclick="loadExample('admin-users')">
+              <div class="example-title">All Users</div>
+              <div class="example-code">GET /api/accounts/admin/users</div>
+            </div>
+            <div class="example-card" onclick="loadExample('admin-stats')">
+              <div class="example-title">System Stats</div>
+              <div class="example-code">GET /api/accounts/admin/stats</div>
+            </div>
+            <div class="example-card" onclick="loadExample('linked-accounts')">
+              <div class="example-title">Linked Accounts</div>
+              <div class="example-code">GET /api/accounts/linked-accounts</div>
+            </div>
+            <div class="example-card" onclick="loadExample('change-password')">
+              <div class="example-title">Change Password</div>
+              <div class="example-code">PUT /api/accounts/auth/change-password</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- WebSocket Tester Tab -->
+      <div id="websocket" class="tab-content">
+        <div class="ws-tester">
+          <h2 style="margin-bottom: 1.5rem">WebSocket Tester</h2>
+
+          <div class="ws-controls">
+            <input
+              type="text"
+              id="ws-url"
+              class="ws-url-input"
+              placeholder="wss://scrollr.olvyx.com/api/finance/ws"
+              value="wss://scrollr.olvyx.com/api/finance/ws"
+            />
+            <button
+              class="connect-button"
+              id="ws-connect"
+              onclick="connectWebSocket()"
+            >
+              Connect
+            </button>
+            <button
+              class="disconnect-button"
+              id="ws-disconnect"
+              onclick="disconnectWebSocket()"
+              style="display: none"
+            >
+              Disconnect
+            </button>
+          </div>
+
+          <div class="ws-message-section">
+            <input
+              type="text"
+              id="ws-message"
+              class="ws-message-input"
+              placeholder='{"type": "connection", "timestamp": 1234567890}'
+            />
+            <button class="send-button" onclick="sendWebSocketMessage()">
+              Send Message
+            </button>
+          </div>
+
+          <div class="section-title">Message Templates</div>
+          <div class="examples-grid" style="margin-bottom: 1.5rem">
+            <div class="example-card" onclick="loadWSExample('connection')">
+              <div class="example-title">Connection</div>
+              <div class="example-code">{"type": "connection"}</div>
+            </div>
+            <div class="example-card" onclick="loadWSExample('finance-filter')">
+              <div class="example-title">Finance Filter</div>
+              <div class="example-code">
+                {"type": "filter_request", "filters": ["symbol_AAPL"]}
+              </div>
+            </div>
+            <div class="example-card" onclick="loadWSExample('sports-filter')">
+              <div class="example-title">Sports Filter</div>
+              <div class="example-code">
+                {"type": "filter_request", "filters": ["NFL", "NBA"]}
+              </div>
+            </div>
+            <div class="example-card" onclick="loadWSExample('ping')">
+              <div class="example-title">Ping</div>
+              <div class="example-code">{"type": "ping"}</div>
+            </div>
+          </div>
+
+          <div class="section-title">Connection Log</div>
+          <div class="ws-log" id="ws-log">
+            <div class="ws-log-entry system">
+              WebSocket tester ready. Click "Connect" to start...
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Documentation Tab -->
+      <div id="documentation" class="tab-content">
+        <div class="doc-section">
+          <h2 style="margin-bottom: 1.5rem">Complete API Documentation</h2>
+          <p style="color: #999; margin-bottom: 2rem;">Comprehensive documentation for all 35 endpoints across all services</p>
+
+          <div class="section-title" style="margin-bottom: 1rem">
+            🏥 Health & Status Endpoints
+          </div>
+          <div class="endpoint-docs">
+            <div class="endpoint-doc">
+              <div class="endpoint-header">
+                <span class="method-badge get">GET</span>
+                <span class="endpoint-path">/api/accounts/health</span>
+              </div>
+              <p class="endpoint-description">Comprehensive accounts service health check with database connectivity, JWT configuration, uptime metrics, and memory usage</p>
+              <div style="margin-top: 0.5rem; color: #4ade80; font-family: monospace; font-size: 0.875rem;">
+                Status States: healthy | degraded | unhealthy<br>
+                Dependencies: PostgreSQL database, JWT secret validation<br>
+                Returns: service info, uptime, memory usage, environment details
+              </div>
+            </div>
+            <div class="endpoint-doc">
+              <div class="endpoint-header">
+                <span class="method-badge get">GET</span>
+                <span class="endpoint-path">/api/finance/health</span>
+              </div>
+              <p class="endpoint-description">Advanced finance service health with database, Finnhub WebSocket status, cache metrics, and real-time client monitoring</p>
+              <div style="margin-top: 0.5rem; color: #4ade80; font-family: monospace; font-size: 0.875rem;">
+                Status States: healthy | degraded | unhealthy<br>
+                Dependencies: PostgreSQL database, Finnhub API, WebSocket connections<br>
+                Returns: client count, cache metrics, trade data age, connection status
+              </div>
+            </div>
+            <div class="endpoint-doc">
+              <div class="endpoint-header">
+                <span class="method-badge get">GET</span>
+                <span class="endpoint-path">/api/sports/health</span>
+              </div>
+              <p class="endpoint-description">Enhanced sports service health with database, ESPN API accessibility, and WebSocket client tracking</p>
+              <div style="margin-top: 0.5rem; color: #4ade80; font-family: monospace; font-size: 0.875rem;">
+                Status States: healthy | degraded | unhealthy<br>
+                Dependencies: PostgreSQL database, ESPN API access<br>
+                Returns: client count, API accessibility status, service metrics
+              </div>
+            </div>
+            <div class="endpoint-doc">
+              <div class="endpoint-header">
+                <span class="method-badge get">GET</span>
+                <span class="endpoint-path">/api/sports/health</span>
+              </div>
+              <p class="endpoint-description">Sports service health with database connection status</p>
+            </div>
+          </div>
+
+          <div class="section-title" style="margin-top: 2rem; margin-bottom: 1rem">
+            👤 Authentication Endpoints
+          </div>
+          <div class="endpoint-docs">
+            <div class="endpoint-doc">
+              <div class="endpoint-header">
+                <span class="method-badge post">POST</span>
+                <span class="endpoint-path">/api/accounts/auth/register</span>
+              </div>
+              <p class="endpoint-description">Create a new user account</p>
+              <table class="param-table">
+                <thead>
+                  <tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="param-name">username</td>
+                    <td class="param-type">string</td>
+                    <td><span class="param-required">Required</span></td>
+                    <td>Unique username</td>
+                  </tr>
+                  <tr>
+                    <td class="param-name">email</td>
+                    <td class="param-type">string</td>
+                    <td><span class="param-required">Required</span></td>
+                    <td>Valid email address</td>
+                  </tr>
+                  <tr>
+                    <td class="param-name">password</td>
+                    <td class="param-type">string</td>
+                    <td><span class="param-required">Required</span></td>
+                    <td>Minimum 8 characters</td>
+                  </tr>
+                  <tr>
+                    <td class="param-name">phone</td>
+                    <td class="param-type">string</td>
+                    <td><span class="param-optional">Optional</span></td>
+                    <td>Phone number</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="endpoint-doc">
+              <div class="endpoint-header">
+                <span class="method-badge post">POST</span>
+                <span class="endpoint-path">/api/accounts/auth/login</span>
+              </div>
+              <p class="endpoint-description">Authenticate user and receive JWT token</p>
+              <table class="param-table">
+                <thead>
+                  <tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="param-name">identifier</td>
+                    <td class="param-type">string</td>
+                    <td><span class="param-required">Required</span></td>
+                    <td>Email or username</td>
+                  </tr>
+                  <tr>
+                    <td class="param-name">password</td>
+                    <td class="param-type">string</td>
+                    <td><span class="param-required">Required</span></td>
+                    <td>User password</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="endpoint-doc">
+              <div class="endpoint-header">
+                <span class="method-badge get">GET</span>
+                <span class="endpoint-path">/api/accounts/auth/me</span>
+                <span style="background: #764ba2; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem;">AUTH</span>
+              </div>
+              <p class="endpoint-description">Get current user profile information</p>
+            </div>
+
+            <div class="endpoint-doc">
+              <div class="endpoint-header">
+                <span class="method-badge put">PUT</span>
+                <span class="endpoint-path">/api/accounts/auth/profile</span>
+                <span style="background: #764ba2; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem;">AUTH</span>
+              </div>
+              <p class="endpoint-description">Update user profile information</p>
+            </div>
+
+            <div class="endpoint-doc">
+              <div class="endpoint-header">
+                <span class="method-badge put">PUT</span>
+                <span class="endpoint-path">/api/accounts/auth/change-password</span>
+                <span style="background: #764ba2; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem;">AUTH</span>
+              </div>
+              <p class="endpoint-description">Change user password</p>
+            </div>
+
+            <div class="endpoint-doc">
+              <div class="endpoint-header">
+                <span class="method-badge delete">DELETE</span>
+                <span class="endpoint-path">/api/accounts/auth/account</span>
+                <span style="background: #764ba2; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem;">AUTH</span>
+              </div>
+              <p class="endpoint-description">Delete user account (requires password confirmation)</p>
+            </div>
+          </div>
+
+          <div class="section-title" style="margin-top: 2rem; margin-bottom: 1rem">
+            ⚙️ User Settings & RSS Endpoints
+          </div>
+          <div class="endpoint-docs">
+            <div class="endpoint-doc">
+              <div class="endpoint-header">
+                <span class="method-badge get">GET</span>
+                <span class="endpoint-path">/api/accounts/auth/settings</span>
+                <span style="background: #764ba2; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem;">AUTH</span>
+              </div>
+              <p class="endpoint-description">Get user settings and preferences</p>
+            </div>
+
+            <div class="endpoint-doc">
+              <div class="endpoint-header">
+                <span class="method-badge post">POST</span>
+                <span class="endpoint-path">/api/accounts/auth/settings</span>
+                <span style="background: #764ba2; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem;">AUTH</span>
+              </div>
+              <p class="endpoint-description">Save user settings and preferences</p>
+            </div>
+
+            <div class="endpoint-doc">
+              <div class="endpoint-header">
+                <span class="method-badge get">GET</span>
+                <span class="endpoint-path">/api/accounts/auth/rss-feeds</span>
+                <span style="background: #764ba2; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem;">AUTH</span>
+              </div>
+              <p class="endpoint-description">Get user's RSS feed list</p>
+            </div>
+
+            <div class="endpoint-doc">
+              <div class="endpoint-header">
+                <span class="method-badge post">POST</span>
+                <span class="endpoint-path">/api/accounts/auth/rss-feeds</span>
+                <span style="background: #764ba2; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem;">AUTH</span>
+              </div>
+              <p class="endpoint-description">Add new RSS feed to user's list</p>
+            </div>
+          </div>
+
+          <div class="section-title" style="margin-top: 2rem; margin-bottom: 1rem">
+            🔗 Linked Accounts Endpoints
+          </div>
+          <div class="endpoint-docs">
+            <div class="endpoint-doc">
+              <div class="endpoint-header">
+                <span class="method-badge get">GET</span>
+                <span class="endpoint-path">/api/accounts/linked-accounts</span>
+                <span style="background: #764ba2; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem;">AUTH</span>
+              </div>
+              <p class="endpoint-description">Get user's linked external accounts</p>
+            </div>
+
+            <div class="endpoint-doc">
+              <div class="endpoint-header">
+                <span class="method-badge post">POST</span>
+                <span class="endpoint-path">/api/accounts/linked-accounts</span>
+                <span style="background: #764ba2; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem;">AUTH</span>
+              </div>
+              <p class="endpoint-description">Add/update linked external account</p>
+            </div>
+
+            <div class="endpoint-doc">
+              <div class="endpoint-header">
+                <span class="method-badge delete">DELETE</span>
+                <span class="endpoint-path">/api/accounts/linked-accounts/:serviceName</span>
+                <span style="background: #764ba2; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem;">AUTH</span>
+              </div>
+              <p class="endpoint-description">Remove linked external account</p>
+            </div>
+          </div>
+
+          <div class="section-title" style="margin-top: 2rem; margin-bottom: 1rem">
+            🛡️ Admin Endpoints
+          </div>
+          <div class="endpoint-docs">
+            <div class="endpoint-doc">
+              <div class="endpoint-header">
+                <span class="method-badge get">GET</span>
+                <span class="endpoint-path">/api/accounts/admin/users</span>
+                <span style="background: #ef4444; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem;">ADMIN</span>
+              </div>
+              <p class="endpoint-description">Get all users with pagination and search</p>
+            </div>
+
+            <div class="endpoint-doc">
+              <div class="endpoint-header">
+                <span class="method-badge get">GET</span>
+                <span class="endpoint-path">/api/accounts/admin/stats</span>
+                <span style="background: #ef4444; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem;">ADMIN</span>
+              </div>
+              <p class="endpoint-description">Get system statistics and metrics</p>
+            </div>
+
+            <div class="endpoint-doc">
+              <div class="endpoint-header">
+                <span class="method-badge get">GET</span>
+                <span class="endpoint-path">/api/accounts/admin/users/:userId</span>
+                <span style="background: #ef4444; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem;">ADMIN</span>
+              </div>
+              <p class="endpoint-description">Get specific user details</p>
+            </div>
+
+            <div class="endpoint-doc">
+              <div class="endpoint-header">
+                <span class="method-badge put">PUT</span>
+                <span class="endpoint-path">/api/accounts/admin/users/:userId/status</span>
+                <span style="background: #ef4444; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem;">ADMIN</span>
+              </div>
+              <p class="endpoint-description">Update user active status</p>
+            </div>
+          </div>
+
+          <div class="section-title" style="margin-top: 2rem; margin-bottom: 1rem">
+            💰 Finance Endpoints
+          </div>
+          <div class="endpoint-docs">
+            <div class="endpoint-doc">
+              <div class="endpoint-header">
+                <span class="method-badge get">GET</span>
+                <span class="endpoint-path">/api/finance/trades</span>
+              </div>
+              <p class="endpoint-description">Get all trade records</p>
+            </div>
+
+            <div class="endpoint-doc">
+              <div class="endpoint-header">
+                <span class="method-badge get">GET</span>
+                <span class="endpoint-path">/api/finance/trades/symbol/:symbol</span>
+              </div>
+              <p class="endpoint-description">Get trades for specific symbol (e.g., AAPL, GOOGL)</p>
+            </div>
+
+            <div class="endpoint-doc">
+              <div class="endpoint-header">
+                <span class="method-badge post">POST</span>
+                <span class="endpoint-path">/api/finance/trades</span>
+              </div>
+              <p class="endpoint-description">Insert new symbol for tracking</p>
+            </div>
+
+            <div class="endpoint-doc">
+              <div class="endpoint-header">
+                <span class="method-badge put">PUT</span>
+                <span class="endpoint-path">/api/finance/trades/:symbol</span>
+              </div>
+              <p class="endpoint-description">Update trade record (price, previous close, etc.)</p>
+            </div>
+          </div>
+
+          <div class="section-title" style="margin-top: 2rem; margin-bottom: 1rem">
+            ⚽ Sports Endpoints
+          </div>
+          <div class="endpoint-docs">
+            <div class="endpoint-doc">
+              <div class="endpoint-header">
+                <span class="method-badge get">GET</span>
+                <span class="endpoint-path">/api/sports/games</span>
+              </div>
+              <p class="endpoint-description">Get all games across all leagues</p>
+            </div>
+
+            <div class="endpoint-doc">
+              <div class="endpoint-header">
+                <span class="method-badge get">GET</span>
+                <span class="endpoint-path">/api/sports/games/:league</span>
+              </div>
+              <p class="endpoint-description">Get games by league (NFL, NBA, MLB, NHL)</p>
+            </div>
+          </div>
+
+          <div class="section-title" style="margin-top: 2rem; margin-bottom: 1rem">
+            🔌 WebSocket Endpoints
+          </div>
+          <div class="endpoint-docs">
+            <div class="endpoint-doc">
+              <div class="endpoint-header">
+                <span class="method-badge" style="background: #8b5cf6">WS</span>
+                <span class="endpoint-path">wss://scrollr.olvyx.com/api/finance/ws</span>
+              </div>
+              <p class="endpoint-description">Real-time financial data WebSocket</p>
+              <table class="param-table">
+                <thead>
+                  <tr><th>Event Type</th><th>Direction</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="param-name">connection</td>
+                    <td class="param-type">Client → Server</td>
+                    <td>Initial connection handshake</td>
+                  </tr>
+                  <tr>
+                    <td class="param-name">filter_request</td>
+                    <td class="param-type">Client → Server</td>
+                    <td>Request filtered data with specific symbols</td>
+                  </tr>
+                  <tr>
+                    <td class="param-name">get_all_trades</td>
+                    <td class="param-type">Client → Server</td>
+                    <td>Request all available trades</td>
+                  </tr>
+                  <tr>
+                    <td class="param-name">ping</td>
+                    <td class="param-type">Client → Server</td>
+                    <td>Heartbeat message</td>
+                  </tr>
+                  <tr>
+                    <td class="param-name">filtered_data</td>
+                    <td class="param-type">Server → Client</td>
+                    <td>Filtered trade data based on request</td>
+                  </tr>
+                  <tr>
+                    <td class="param-name">financial_update</td>
+                    <td class="param-type">Server → Client</td>
+                    <td>Real-time market updates</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="endpoint-doc">
+              <div class="endpoint-header">
+                <span class="method-badge" style="background: #8b5cf6">WS</span>
+                <span class="endpoint-path">wss://scrollr.olvyx.com/api/sports/ws</span>
+              </div>
+              <p class="endpoint-description">Real-time sports data WebSocket</p>
+              <table class="param-table">
+                <thead>
+                  <tr><th>Event Type</th><th>Direction</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="param-name">connection</td>
+                    <td class="param-type">Client → Server</td>
+                    <td>Initial connection handshake</td>
+                  </tr>
+                  <tr>
+                    <td class="param-name">filter_request</td>
+                    <td class="param-type">Client → Server</td>
+                    <td>Request games by league (NFL, NBA, MLB, NHL)</td>
+                  </tr>
+                  <tr>
+                    <td class="param-name">get_all_games</td>
+                    <td class="param-type">Client → Server</td>
+                    <td>Request all available games</td>
+                  </tr>
+                  <tr>
+                    <td class="param-name">filtered_data</td>
+                    <td class="param-type">Server → Client</td>
+                    <td>Filtered games data based on request</td>
+                  </tr>
+                  <tr>
+                    <td class="param-name">games_updated</td>
+                    <td class="param-type">Server → Client</td>
+                    <td>Notification when game data is updated</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Examples Tab -->
+      <div id="examples" class="tab-content">
+        <div class="doc-section">
+          <h2 style="margin-bottom: 1.5rem">Code Examples</h2>
+
+          <div class="endpoint-doc">
+            <div class="endpoint-header">
+              <span class="example-title">JavaScript/TypeScript</span>
+              <button class="copy-button" onclick="copyCode('js-example')">
+                Copy
+              </button>
+            </div>
+            <pre class="response-body" id="js-example">
+// Authentication
+const response = await fetch('https://scrollr.olvyx.com/api/accounts/auth/login', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    identifier: 'user@example.com',
+    password: 'yourpassword'
+  })
+});
+
+const { token } = await response.json();
+
+// WebSocket Connection
+const ws = new WebSocket('wss://scrollr.olvyx.com/api/finance/ws');
+
+ws.onopen = () => {
+  // Send connection message
+  ws.send(JSON.stringify({
+    type: 'connection',
+    timestamp: Date.now()
+  }));
+  
+  // Request filtered data
+  ws.send(JSON.stringify({
+    type: 'filter_request',
+    filters: ['symbol_AAPL', 'symbol_GOOGL']
+  }));
+};
+
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  console.log('Received:', data);
+};</pre
+            >
+          </div>
+
+          <div class="endpoint-doc">
+            <div class="endpoint-header">
+              <span class="example-title">Python</span>
+              <button class="copy-button" onclick="copyCode('python-example')">
+                Copy
+              </button>
+            </div>
+            <pre class="response-body" id="python-example">
+import requests
+import websocket
+import json
+
+# Authentication
+response = requests.post('https://scrollr.olvyx.com/api/accounts/auth/login', 
+    json={
+        'identifier': 'user@example.com',
+        'password': 'yourpassword'
+    }
+)
+
+token = response.json()['token']
+
+# WebSocket Connection
+def on_open(ws):
+    # Send connection message
+    ws.send(json.dumps({
+        'type': 'connection',
+        'timestamp': int(time.time() * 1000)
+    }))
+    
+    # Request filtered data
+    ws.send(json.dumps({
+        'type': 'filter_request',
+        'filters': ['symbol_AAPL', 'symbol_GOOGL']
+    }))
+
+def on_message(ws, message):
+    data = json.loads(message)
+    print(f'Received: {data}')
+
+ws = websocket.WebSocketApp('wss://scrollr.olvyx.com/api/finance/ws',
+    on_open=on_open,
+    on_message=on_message)
+
+ws.run_forever()</pre
+            >
+          </div>
+
+          <div class="endpoint-doc">
+            <div class="endpoint-header">
+              <span class="example-title">cURL</span>
+              <button class="copy-button" onclick="copyCode('curl-example')">
+                Copy
+              </button>
+            </div>
+            <pre class="response-body" id="curl-example">
+# Login
+curl -X POST https://scrollr.olvyx.com/api/accounts/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"identifier": "user@example.com", "password": "yourpassword"}'
+
+# Get user profile (with token)
+curl -X GET https://scrollr.olvyx.com/api/accounts/auth/me \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+# Get all trades
+curl -X GET https://scrollr.olvyx.com/api/finance/trades
+
+# Get specific symbol trades
+curl -X GET https://scrollr.olvyx.com/api/finance/trades/symbol/AAPL</pre
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Global variables
+      let ws = null;
+      const baseUrl = window.location.origin;
+
+      // Tab navigation
+      function showTab(tabName) {
+        // Hide all tabs
+        document.querySelectorAll(".tab-content").forEach((tab) => {
+          tab.classList.remove("active");
+        });
+        document.querySelectorAll(".tab-button").forEach((btn) => {
+          btn.classList.remove("active");
+        });
+
+        // Show selected tab
+        document.getElementById(tabName).classList.add("active");
+        event.target.classList.add("active");
+      }
+
+      // Health monitoring
+      async function checkHealth() {
+        const services = ["accounts", "finance", "sports"];
+
+        for (const service of services) {
+          try {
+            const response = await fetch(`${baseUrl}/api/${service}/health`);
+            const dot = document.getElementById(`health-${service}`);
+            const details = document.getElementById(`health-${service}-details`);
+            const item = document.querySelector(`[data-service="${service}"]`);
+
+            if (response.ok) {
+              const healthData = await response.json();
+              
+              // Update dot color based on status
+              dot.classList.remove("error", "warning");
+              if (healthData.status === 'unhealthy') {
+                dot.classList.add("error");
+              } else if (healthData.status === 'degraded') {
+                dot.classList.add("warning");
+              }
+
+              // Update details and tooltip
+              let detailText = '';
+              let tooltipText = `${service.charAt(0).toUpperCase() + service.slice(1)} Service Status:\n`;
+              tooltipText += `Status: ${healthData.status}\n`;
+              tooltipText += `Version: ${healthData.version || 'N/A'}\n`;
+              tooltipText += `Uptime: ${Math.floor((healthData.uptime || 0) / 60)}m\n`;
+
+              if (service === 'accounts') {
+                detailText = healthData.database_connected ? 'DB✓' : 'DB✗';
+                if (healthData.jwt_secret_configured === false) {
+                  detailText += ' JWT✗';
+                }
+                tooltipText += `Database: ${healthData.database_connected ? 'Connected' : 'Disconnected'}\n`;
+                tooltipText += `JWT Secret: ${healthData.jwt_secret_configured ? 'Configured' : 'Not Configured'}`;
+              } else if (service === 'finance') {
+                const dbStatus = healthData.database_connected ? 'DB✓' : 'DB✗';
+                const wsStatus = healthData.finnhub_connected ? 'WS✓' : 'WS✗';
+                detailText = `${dbStatus} ${wsStatus}`;
+                if (healthData.websocket_clients) {
+                  detailText += ` (${healthData.websocket_clients})`;
+                }
+                tooltipText += `Database: ${healthData.database_connected ? 'Connected' : 'Disconnected'}\n`;
+                tooltipText += `Finnhub WebSocket: ${healthData.finnhub_connected ? 'Connected' : 'Disconnected'}\n`;
+                tooltipText += `WebSocket Clients: ${healthData.websocket_clients || 0}\n`;
+                tooltipText += `Cache Size: ${healthData.cache_size || 0}`;
+              } else if (service === 'sports') {
+                const dbStatus = healthData.database_connected ? 'DB✓' : 'DB✗';
+                const espnStatus = healthData.espn_api_accessible ? 'ESPN✓' : 'ESPN✗';
+                detailText = `${dbStatus} ${espnStatus}`;
+                if (healthData.websocket_clients) {
+                  detailText += ` (${healthData.websocket_clients})`;
+                }
+                tooltipText += `Database: ${healthData.database_connected ? 'Connected' : 'Disconnected'}\n`;
+                tooltipText += `ESPN API: ${healthData.espn_api_accessible ? 'Accessible' : 'Not Accessible'}\n`;
+                tooltipText += `WebSocket Clients: ${healthData.websocket_clients || 0}`;
+              }
+
+              details.textContent = detailText;
+              item.title = tooltipText;
+            } else {
+              dot.classList.add("warning");
+              details.textContent = `${response.status}`;
+              item.title = `${service.charAt(0).toUpperCase() + service.slice(1)} Service: HTTP ${response.status} ${response.statusText}`;
+            }
+          } catch (error) {
+            const dot = document.getElementById(`health-${service}`);
+            const details = document.getElementById(`health-${service}-details`);
+            const item = document.querySelector(`[data-service="${service}"]`);
+            
+            dot.classList.add("error");
+            details.textContent = 'Offline';
+            item.title = `${service.charAt(0).toUpperCase() + service.slice(1)} Service: Connection Failed - ${error.message}`;
+          }
+        }
+      }
+
+      // API Tester
+      async function sendRequest() {
+        const method = document.getElementById("method").value;
+        const url = document.getElementById("url").value;
+        const bodyText = document.getElementById("request-body").value;
+
+        const statusEl = document.getElementById("status-code");
+        const timeEl = document.getElementById("response-time");
+        const bodyEl = document.getElementById("response-body");
+
+        // Clear previous response
+        statusEl.textContent = "";
+        timeEl.textContent = "";
+        bodyEl.textContent = "Sending request...";
+
+        const headers = {};
+        document.querySelectorAll(".header-input").forEach((row) => {
+          const name = row.children[0].value;
+          const value = row.children[1].value;
+          if (name && value) {
+            headers[name] = value;
+          }
+        });
+
+        const startTime = Date.now();
+
+        try {
+          const options = {
+            method,
+            headers,
+          };
+
+          if ((method === "POST" || method === "PUT") && bodyText) {
+            options.body = bodyText;
+          }
+
+          const response = await fetch(`${baseUrl}${url}`, options);
+          const responseTime = Date.now() - startTime;
+
+          // Update status
+          statusEl.textContent = `${response.status} ${response.statusText}`;
+          statusEl.className = response.ok
+            ? "status-code success"
+            : "status-code error";
+          timeEl.textContent = `${responseTime}ms`;
+
+          // Get response body
+          const contentType = response.headers.get("content-type");
+          let responseBody;
+
+          if (contentType && contentType.includes("application/json")) {
+            responseBody = await response.json();
+            bodyEl.textContent = JSON.stringify(responseBody, null, 2);
+          } else {
+            responseBody = await response.text();
+            bodyEl.textContent = responseBody;
+          }
+        } catch (error) {
+          statusEl.textContent = "Network Error";
+          statusEl.className = "status-code error";
+          bodyEl.textContent = error.toString();
+        }
+      }
+
+      function addHeader() {
+        const container = document.getElementById("headers-container");
+        const div = document.createElement("div");
+        div.className = "header-input";
+        div.innerHTML = `
+          <input type="text" placeholder="Header name">
+          <input type="text" placeholder="Header value">
+          <button class="add-header-btn" onclick="this.parentElement.remove()">Remove</button>
+        `;
+        container.appendChild(div);
+      }
+
+      function loadExample(example) {
+        const examples = {
+          // Health & Status
+          "accounts-health": { method: "GET", url: "/api/accounts/health", body: "" },
+          "finance-health": { method: "GET", url: "/api/finance/health", body: "" },
+          "sports-health": { method: "GET", url: "/api/sports/health", body: "" },
+          "accounts-root": { method: "GET", url: "/api/accounts/", body: "" },
+
+          // Authentication
+          "register": {
+            method: "POST",
+            url: "/api/accounts/auth/register",
+            body: JSON.stringify({
+              username: "newuser",
+              email: "user@example.com",
+              password: "password123",
+              phone: "+1234567890"
+            }, null, 2)
+          },
+          "login": {
+            method: "POST",
+            url: "/api/accounts/auth/login",
+            body: JSON.stringify({
+              identifier: "user@example.com",
+              password: "password123"
+            }, null, 2)
+          },
+          "profile": { method: "GET", url: "/api/accounts/auth/me", body: "" },
+          "update-profile": {
+            method: "PUT",
+            url: "/api/accounts/auth/profile",
+            body: JSON.stringify({
+              username: "updateduser",
+              phone: "+0987654321"
+            }, null, 2)
+          },
+
+          // Finance Data
+          "all-trades": { method: "GET", url: "/api/finance/trades", body: "" },
+          "aapl-trades": { method: "GET", url: "/api/finance/trades/symbol/AAPL", body: "" },
+          "googl-trades": { method: "GET", url: "/api/finance/trades/symbol/GOOGL", body: "" },
+          "tsla-trades": { method: "GET", url: "/api/finance/trades/symbol/TSLA", body: "" },
+
+          // Sports Data
+          "all-games": { method: "GET", url: "/api/sports/games", body: "" },
+          "nfl-games": { method: "GET", url: "/api/sports/games/NFL", body: "" },
+          "nba-games": { method: "GET", url: "/api/sports/games/NBA", body: "" },
+          "mlb-games": { method: "GET", url: "/api/sports/games/MLB", body: "" },
+
+          // User Settings
+          "get-settings": { method: "GET", url: "/api/accounts/auth/settings", body: "" },
+          "update-settings": {
+            method: "POST",
+            url: "/api/accounts/auth/settings",
+            body: JSON.stringify({
+              theme: "dark",
+              notifications: true,
+              autoRefresh: 30
+            }, null, 2)
+          },
+          "get-rss": { method: "GET", url: "/api/accounts/auth/rss-feeds", body: "" },
+          "add-rss": {
+            method: "POST",
+            url: "/api/accounts/auth/rss-feeds",
+            body: JSON.stringify({
+              name: "Tech News",
+              url: "https://techcrunch.com/feed/",
+              category: "technology"
+            }, null, 2)
+          },
+
+          // Admin & Advanced
+          "admin-users": { method: "GET", url: "/api/accounts/admin/users", body: "" },
+          "admin-stats": { method: "GET", url: "/api/accounts/admin/stats", body: "" },
+          "linked-accounts": { method: "GET", url: "/api/accounts/linked-accounts", body: "" },
+          "change-password": {
+            method: "PUT",
+            url: "/api/accounts/auth/change-password",
+            body: JSON.stringify({
+              currentPassword: "oldpassword123",
+              newPassword: "newpassword456"
+            }, null, 2)
+          },
+
+          // Legacy support
+          "health-check": { method: "GET", url: "/api/accounts/health", body: "" },
+          "trades": { method: "GET", url: "/api/finance/trades", body: "" },
+          "games": { method: "GET", url: "/api/sports/games", body: "" }
+        };
+
+        const ex = examples[example];
+        if (ex) {
+          document.getElementById("method").value = ex.method;
+          document.getElementById("url").value = ex.url;
+          document.getElementById("request-body").value = ex.body;
+          
+          // Auto-add Authorization header for auth-required endpoints
+          if (ex.url.includes('/auth/') || ex.url.includes('/admin/') || ex.url.includes('/linked-accounts')) {
+            const container = document.getElementById("headers-container");
+            const existingHeaders = container.querySelectorAll('.header-input');
+            let hasAuthHeader = false;
+            
+            existingHeaders.forEach(row => {
+              if (row.children[0].value.toLowerCase() === 'authorization') {
+                hasAuthHeader = true;
+              }
+            });
+            
+            if (!hasAuthHeader) {
+              const div = document.createElement("div");
+              div.className = "header-input";
+              div.innerHTML = `
+                <input type="text" placeholder="Header name" value="Authorization">
+                <input type="text" placeholder="Header value" value="Bearer YOUR_JWT_TOKEN_HERE">
+                <button class="add-header-btn" onclick="this.parentElement.remove()">Remove</button>
+              `;
+              container.appendChild(div);
+            }
+          }
+        }
+      }
+
+      // WebSocket Tester
+      function connectWebSocket() {
+        const urlInput = document.getElementById("ws-url");
+        const connectBtn = document.getElementById("ws-connect");
+        const disconnectBtn = document.getElementById("ws-disconnect");
+        const log = document.getElementById("ws-log");
+
+        // Clear log
+        log.innerHTML = "";
+
+        addLogEntry("system", `Connecting to ${urlInput.value}...`);
+
+        try {
+          ws = new WebSocket(urlInput.value);
+
+          ws.onopen = () => {
+            addLogEntry("system", "Connected successfully!");
+            connectBtn.style.display = "none";
+            disconnectBtn.style.display = "block";
+            urlInput.disabled = true;
+          };
+
+          ws.onmessage = (event) => {
+            let data;
+            try {
+              data = JSON.parse(event.data);
+              addLogEntry("received", JSON.stringify(data, null, 2));
+            } catch {
+              addLogEntry("received", event.data);
+            }
+          };
+
+          ws.onerror = (error) => {
+            addLogEntry("error", "Connection error occurred");
+          };
+
+          ws.onclose = () => {
+            addLogEntry("system", "Connection closed");
+            connectBtn.style.display = "block";
+            disconnectBtn.style.display = "none";
+            urlInput.disabled = false;
+            ws = null;
+          };
+        } catch (error) {
+          addLogEntry("error", `Failed to connect: ${error.message}`);
+        }
+      }
+
+      function disconnectWebSocket() {
+        if (ws) {
+          ws.close();
+        }
+      }
+
+      function sendWebSocketMessage() {
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+          addLogEntry("error", "Not connected to WebSocket");
+          return;
+        }
+
+        const messageInput = document.getElementById("ws-message");
+        const message = messageInput.value;
+
+        try {
+          // Try to parse as JSON for pretty printing
+          const parsed = JSON.parse(message);
+          ws.send(message);
+          addLogEntry("sent", JSON.stringify(parsed, null, 2));
+        } catch {
+          // Send as plain text if not valid JSON
+          ws.send(message);
+          addLogEntry("sent", message);
+        }
+      }
+
+      function addLogEntry(type, message) {
+        const log = document.getElementById("ws-log");
+        const entry = document.createElement("div");
+        entry.className = `ws-log-entry ${type}`;
+
+        const timestamp = new Date().toLocaleTimeString();
+        const prefix = {
+          sent: "→ SENT",
+          received: "← RECEIVED",
+          error: "✗ ERROR",
+          system: "● SYSTEM",
+        }[type];
+
+        entry.innerHTML = `<strong>[${timestamp}] ${prefix}</strong>\n${message}`;
+        log.appendChild(entry);
+        log.scrollTop = log.scrollHeight;
+      }
+
+      function loadWSExample(example) {
+        const examples = {
+          connection: {
+            type: "connection",
+            timestamp: Date.now(),
+          },
+          "finance-filter": {
+            type: "filter_request",
+            filters: ["symbol_AAPL", "symbol_GOOGL", "symbol_TSLA"],
+          },
+          "sports-filter": {
+            type: "filter_request",
+            filters: ["NFL", "NBA", "state_live"],
+          },
+          ping: {
+            type: "ping",
+            timestamp: Date.now(),
+          },
+        };
+
+        document.getElementById("ws-message").value = JSON.stringify(
+          examples[example]
+        );
+      }
+
+      // Copy code functionality
+      function copyCode(elementId) {
+        const codeElement = document.getElementById(elementId);
+        const text = codeElement.textContent;
+
+        navigator.clipboard.writeText(text).then(() => {
+          const button = event.target;
+          const originalText = button.textContent;
+          button.textContent = "Copied!";
+          button.classList.add("copied");
+
+          setTimeout(() => {
+            button.textContent = originalText;
+            button.classList.remove("copied");
+          }, 2000);
+        });
+      }
+
+      // Initialize
+      document.addEventListener("DOMContentLoaded", () => {
+        // Check health every 30 seconds
+        checkHealth();
+        setInterval(checkHealth, 30000);
+
+        // Set environment based on URL
+        const envBadge = document.getElementById("environment");
+        if (window.location.hostname === "localhost") {
+          envBadge.textContent = "Development";
+          envBadge.style.background = "#f59e0b";
+        }
+
+        // Add enter key support for inputs
+        document
+          .getElementById("ws-message")
+          .addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
+              sendWebSocketMessage();
+            }
+          });
+
+        document.getElementById("url").addEventListener("keypress", (e) => {
+          if (e.key === "Enter") {
+            sendRequest();
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
