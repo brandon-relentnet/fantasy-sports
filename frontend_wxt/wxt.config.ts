@@ -11,7 +11,14 @@ export default defineConfig({
         matches: ['<all_urls>'],
       },
     ],
-    permissions: ['storage']
+    permissions: ['storage'],
+    host_permissions: [
+      'https://api.myscrollr.com/*',
+      'http://localhost:5000/*',
+      'http://localhost:4001/*',
+      'http://localhost:4000/*',
+      'http://localhost:4002/*'
+    ]
   },
   modules: ["@wxt-dev/module-react"],
   srcDir: 'src',
