@@ -15,7 +15,7 @@ function FantasyBaseballPanel() {
   const toggles = useSelector((s) => s.toggles || {});
   const fantasyEnabled = !!(toggles.YAHOO_FANTASY ?? true);
   // Use Redux as source of truth for enabled
-  const SPORTS_API = "http://localhost:4000";
+  const fantasyApi = API_ENDPOINTS.fantasy;
   const [accessToken, setAccessToken] = useState("");
   const [step, setStep] = useState("signin");
   const [leagues, setLeagues] = useState([]);
@@ -82,7 +82,8 @@ function FantasyBaseballPanel() {
 
   // Yahoo OAuth popup flow
   function signInWithYahoo() {
-    const authUrl = `${SPORTS_API}/auth/yahoo/start`;
+    if (!fantasyApi) return;
+    const authUrl = fantasyApi.auth.start;
     const w = 500, h = 700;
     const y = window.top.outerHeight / 2 + window.top.screenY - ( h / 2);
     const x = window.top.outerWidth / 2 + window.top.screenX - ( w / 2);
@@ -104,7 +105,8 @@ function FantasyBaseballPanel() {
     if (!accessToken) return;
     setLoading(true);
     try {
-      const res = await fetch(`${SPORTS_API}/leagues`, { headers: authHeader });
+      if (!fantasyApi) return;
+      const res = await fetch(fantasyApi.leagues(), { headers: authHeader });
       const data = await res.json();
       const arr = Array.isArray(data.leagues) ? data.leagues : [];
       setLeagues(arr);
@@ -127,7 +129,8 @@ function FantasyBaseballPanel() {
     setRoster([]);
     setLoading(true);
     try {
-      const res = await fetch(`${SPORTS_API}/league/${encodeURIComponent(leagueKey)}/standings`, { headers: authHeader });
+      if (!fantasyApi) return;
+      const res = await fetch(fantasyApi.leagueStandings(leagueKey), { headers: authHeader });
       const data = await res.json();
       const t = (data.standings || []).map((x) => ({ team_key: x.team_key, name: x.name }));
       setTeams(t);
@@ -184,8 +187,12 @@ function FantasyBaseballPanel() {
     try { localStorage.setItem('yahoo_selected_team', teamKey); } catch {}
     setLoading(true);
     try {
-      const query = dateMode === "date" && date ? `?date=${encodeURIComponent(date)}` : "";
-      const res = await fetch(`${SPORTS_API}/team/${encodeURIComponent(teamKey)}/roster${query}`, { headers: authHeader });
+      if (!fantasyApi) return;
+      const rosterUrl = fantasyApi.teamRoster(
+        teamKey,
+        dateMode === "date" && date ? { date } : undefined
+      );
+      const res = await fetch(rosterUrl, { headers: authHeader });
       const data = await res.json();
       setRoster(data.roster || []);
     } finally {
@@ -196,8 +203,12 @@ function FantasyBaseballPanel() {
     if (!selectedTeam) return;
     setLoading(true);
     try {
-      const query = dateMode === "date" && date ? `?date=${encodeURIComponent(date)}` : "";
-      const res = await fetch(`${SPORTS_API}/team/${encodeURIComponent(selectedTeam)}/roster${query}`, { headers: authHeader });
+      if (!fantasyApi) return;
+      const rosterUrl = fantasyApi.teamRoster(
+        selectedTeam,
+        dateMode === "date" && date ? { date } : undefined
+      );
+      const res = await fetch(rosterUrl, { headers: authHeader });
       const data = await res.json();
       setRoster(data.roster || []);
     } finally {

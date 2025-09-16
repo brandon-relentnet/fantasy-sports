@@ -21,7 +21,8 @@ export function testEndpointsConfiguration() {
     accountsBase: API_ENDPOINTS.accounts.base,
     accountsAuthLogin: API_ENDPOINTS.accounts.auth.login,
     financeBase: API_ENDPOINTS.finance.base,
-    sportsBase: API_ENDPOINTS.sports.base
+    sportsBase: API_ENDPOINTS.sports.base,
+    fantasyBase: API_ENDPOINTS.fantasy?.base
   });
 
   // Test WebSocket endpoints
@@ -34,7 +35,8 @@ export function testEndpointsConfiguration() {
   debugLogger.info(DEBUG_CATEGORIES.CONFIG, "Service Configuration", {
     accounts: SERVICE_CONFIG.accounts,
     finance: SERVICE_CONFIG.finance,
-    sports: SERVICE_CONFIG.sports
+    sports: SERVICE_CONFIG.sports,
+    fantasy: SERVICE_CONFIG.fantasy
   });
 
   // Test helper functions
@@ -43,7 +45,8 @@ export function testEndpointsConfiguration() {
       buildUrlAccounts: buildUrl("accounts", "/health"),
       buildUrlFinance: buildUrl("finance", "/api/trades"),
       buildWsUrlFinance: buildWsUrl("finance"),
-      buildWsUrlSports: buildWsUrl("sports")
+      buildWsUrlSports: buildWsUrl("sports"),
+      buildUrlFantasy: buildUrl("fantasy", "/health")
     });
   } catch (error) {
     debugLogger.error(DEBUG_CATEGORIES.CONFIG, "Helper function error", error);
@@ -51,7 +54,7 @@ export function testEndpointsConfiguration() {
 
   // Test validation
   // Validation logic
-  const expectedPorts = { accounts: 5000, finance: 4001, sports: 4000 };
+  const expectedPorts = { accounts: 5000, finance: 4001, sports: 4000, fantasy: 4002 };
   let allValid = true;
 
   Object.entries(expectedPorts).forEach(([service, expectedPort]) => {

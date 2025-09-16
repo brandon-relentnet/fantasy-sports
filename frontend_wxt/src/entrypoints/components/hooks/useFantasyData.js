@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux';
 import { API_ENDPOINTS } from '@/entrypoints/config/endpoints.js';
 
 export default function useFantasyData() {
-  const SPORTS_API = 'http://localhost:4000';
+  const fantasyApi = API_ENDPOINTS.fantasy;
   const [roster, setRoster] = useState([]);
   const [connectionStatus, setConnectionStatus] = useState('idle'); // idle | loading | ok | error
   // Filters from localStorage
@@ -56,14 +56,16 @@ export default function useFantasyData() {
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      if (!enabled || !accessToken || !selectedTeam) return;
+      if (!enabled || !accessToken || !selectedTeam || !fantasyApi) return;
       setConnectionStatus('loading');
       try {
         const effectiveDate = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : '';
-        const q = effectiveDate ? `?date=${encodeURIComponent(effectiveDate)}` : '';
-        const res = await fetch(`${SPORTS_API}/team/${encodeURIComponent(selectedTeam)}/roster${q}`, {
+        const res = await fetch(
+          fantasyApi.teamRoster(selectedTeam, effectiveDate ? { date: effectiveDate } : undefined),
+          {
           headers: { Authorization: `Bearer ${accessToken}` },
-        });
+          }
+        );
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         if (!cancelled) {
@@ -77,7 +79,7 @@ export default function useFantasyData() {
     }
     load();
     return () => { cancelled = true; };
-  }, [SPORTS_API, accessToken, selectedTeam, dateMode, date, enabled]);
+  }, [fantasyApi, accessToken, selectedTeam, dateMode, date, enabled]);
 
   const filteredRoster = useMemo(() => {
     if (!enabled) return [];

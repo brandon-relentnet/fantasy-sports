@@ -16,9 +16,10 @@ const BASE_CONFIG = {
     wsProtocol: "ws",
     host: "localhost",
     ports: {
-      accounts: 5000,
-      finance: 4001,
-      sports: 4000,
+      accounts: Number(import.meta.env.VITE_ACCOUNTS_PORT) || 5000,
+      finance: Number(import.meta.env.VITE_FINANCE_PORT) || 4001,
+      sports: Number(import.meta.env.VITE_SPORTS_PORT) || 4000,
+      fantasy: Number(import.meta.env.VITE_FANTASY_PORT) || 4002,
     },
   },
   production: {
@@ -29,6 +30,7 @@ const BASE_CONFIG = {
       accounts: import.meta.env.VITE_ACCOUNTS_PORT || "/api/accounts",
       finance: import.meta.env.VITE_FINANCE_PORT || "/api/finance",
       sports: import.meta.env.VITE_SPORTS_PORT || "/api/sports",
+      fantasy: import.meta.env.VITE_FANTASY_PATH || "/api/fantasy-yahoo",
     },
   },
 };
@@ -37,8 +39,6 @@ const BASE_CONFIG = {
 const getConfig = () => {
   return isDevelopment() ? BASE_CONFIG.development : BASE_CONFIG.production;
 };
-
-const config = getConfig();
 
 // Helper function to build service base URL
 const buildServiceUrl = (service) => {
@@ -50,6 +50,9 @@ const buildServiceUrl = (service) => {
     return `${config.protocol}://${config.host}${path}`;
   }
 };
+
+const config = getConfig();
+const fantasyBaseUrl = buildServiceUrl("fantasy");
 
 // API Base URLs
 export const API_ENDPOINTS = {
@@ -75,6 +78,27 @@ export const API_ENDPOINTS = {
     base: `${buildServiceUrl("sports")}`,
     games: `${buildServiceUrl("sports")}/games`,
     health: `${buildServiceUrl("sports")}/health`,
+  },
+  fantasy: {
+    base: fantasyBaseUrl,
+    leagues: () => `${fantasyBaseUrl}/leagues`,
+    leagueStandings: (leagueKey) =>
+      `${fantasyBaseUrl}/league/${encodeURIComponent(leagueKey)}/standings`,
+    teamRoster: (teamKey, params = {}) => {
+      const searchParams = new URLSearchParams();
+      if (params.date) searchParams.set("date", params.date);
+      if (params.debug) searchParams.set("debug", params.debug);
+      const query = searchParams.toString();
+      return `${fantasyBaseUrl}/team/${encodeURIComponent(teamKey)}/roster${
+        query ? `?${query}` : ""
+      }`;
+    },
+    auth: {
+      start: `${fantasyBaseUrl}/auth/yahoo/start`,
+      callbackTest: `${fantasyBaseUrl}/auth/yahoo/callback/test`,
+      config: `${fantasyBaseUrl}/auth/yahoo/config`,
+    },
+    health: `${fantasyBaseUrl}/health`,
   },
 };
 
@@ -118,6 +142,13 @@ export const SERVICE_CONFIG = {
     host: config.host,
     protocol: config.protocol,
     wsProtocol: config.wsProtocol,
+  },
+  fantasy: {
+    ...(isDevelopment()
+      ? { port: config.ports.fantasy }
+      : { path: config.paths.fantasy }),
+    host: config.host,
+    protocol: config.protocol,
   },
 };
 
