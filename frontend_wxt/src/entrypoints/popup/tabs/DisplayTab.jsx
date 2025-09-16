@@ -1,4 +1,4 @@
-import { ComputerDesktopIcon, ChevronDownIcon } from "@heroicons/react/24/solid";
+import { ComputerDesktopIcon, ChevronDownIcon, Bars3Icon } from "@heroicons/react/24/solid";
 import { FinanceSection } from "../../components/FinanceSection.jsx";
 import { SportsSection } from "../../components/SportsSection.jsx";
 import { RssSection } from "../../components/RssSection.jsx";
@@ -8,6 +8,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { setToggles } from "@/entrypoints/store/togglesSlice.js";
 // We will use local state + localStorage for fantasy filters; keep Redux only for enabled toggle
 import { API_ENDPOINTS } from "@/entrypoints/config/endpoints.js";
+import { AnimatePresence, Reorder, motion } from "framer-motion";
  
 
 function FantasyBaseballPanel() {
@@ -384,8 +385,9 @@ function FantasyBaseballPanel() {
 }
 
 export default function DisplayTab() {
-  const { isAuthenticated } = useAuth();
+  useAuth();
   const sectionStorageKey = "scrollr_display_sections";
+  const orderStorageKey = "scrollr_display_order";
   const defaultSections = {
     sports: true,
     finance: true,
@@ -405,6 +407,29 @@ export default function DisplayTab() {
     return defaultSections;
   });
 
+  const baseOrder = Object.keys(defaultSections);
+  const [sectionOrder, setSectionOrder] = useState(() => {
+    if (typeof window === "undefined") return baseOrder;
+    try {
+      const stored = window.localStorage.getItem(orderStorageKey);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length) {
+          const filtered = parsed.filter((key) => baseOrder.includes(key));
+          const extras = baseOrder.filter((key) => !filtered.includes(key));
+          return [...filtered, ...extras];
+        }
+      }
+    } catch {}
+    return baseOrder;
+  });
+
+  const orderedSections = useMemo(() => {
+    const known = sectionOrder.filter((key) => baseOrder.includes(key));
+    const extras = baseOrder.filter((key) => !known.includes(key));
+    return [...known, ...extras];
+  }, [sectionOrder]);
+
   const toggleSection = (key) => {
     setOpenSections((prev) => {
       const next = { ...prev, [key]: !prev[key] };
@@ -413,38 +438,31 @@ export default function DisplayTab() {
     });
   };
 
-  const sections = [
-    {
-      key: "sports",
-      title: "Sports",
-      description: "Manage live game tracking, alerts, and score ribbon settings.",
-      content: <SportsSection />,
-    },
-    {
-      key: "finance",
-      title: "Finance",
-      description: "Control trade stream behaviour and financial ticker options.",
-      content: isAuthenticated ? (
-        <FinanceSection />
-      ) : (
-        <div className="text-sm opacity-70">
-          Sign in to manage finance alerts and ticker preferences.
-        </div>
-      ),
-    },
-    {
-      key: "rss",
-      title: "News (RSS)",
-      description: "Add, remove, and prioritise the feeds that drive breaking news.",
-      content: <RssSection />,
-    },
-    {
-      key: "fantasy",
-      title: "Fantasy Baseball",
-      description: "Connect Yahoo leagues and fine-tune roster presentation.",
-      content: <FantasyBaseballPanel />,
-    },
-  ];
+  const sectionMap = useMemo(
+    () => ({
+      sports: {
+        title: "Sports",
+        description: "Manage live game tracking, alerts, and score ribbon settings.",
+        content: <SportsSection />,
+      },
+      finance: {
+        title: "Finance",
+        description: "Control trade stream behaviour and financial ticker options.",
+        content: <FinanceSection />,
+      },
+      rss: {
+        title: "News (RSS)",
+        description: "Add, remove, and prioritise the feeds that drive breaking news.",
+        content: <RssSection />,
+      },
+      fantasy: {
+        title: "Fantasy Baseball",
+        description: "Connect Yahoo leagues and fine-tune roster presentation.",
+        content: <FantasyBaseballPanel />,
+      },
+    }),
+    []
+  );
 
   return (
     <>
@@ -457,42 +475,78 @@ export default function DisplayTab() {
         />
         <ComputerDesktopIcon className="size-8" />
       </label>
-      <div className="space-y-4 bg-base-100 p-2 border-base-300 max-h-120 overflow-hidden tab-content">
-        <div className="flex flex-col gap-3 p-2 h-110 overflow-y-auto">
-          {sections.map(({ key, title, description, content }) => {
+      <div className="space-y-4 bg-base-100 p-2 border border-base-300 rounded-xl max-h-120 overflow-hidden tab-content">
+        <Reorder.Group
+          axis="y"
+          values={orderedSections}
+          onReorder={(order) => {
+            setSectionOrder(order);
+            if (typeof window !== "undefined") {
+              try {
+                window.localStorage.setItem(orderStorageKey, JSON.stringify(order));
+              } catch {}
+            }
+          }}
+          className="flex flex-col gap-3 p-2 h-110 overflow-y-auto"
+        >
+          {orderedSections.map((key) => {
+            const section = sectionMap[key];
+            if (!section) return null;
             const isOpen = openSections[key] ?? true;
             return (
-              <section
+              <Reorder.Item
+                value={key}
                 key={key}
-                className="bg-base-100 border border-base-300 rounded-box shadow-sm"
+                className="rounded-2xl bg-base-100/80 shadow-sm backdrop-blur-sm"
+                whileDrag={{ scale: 1.01, boxShadow: "0 12px 24px rgba(15, 23, 42, 0.12)" }}
+                dragListener
               >
-                <button
+                <motion.button
                   type="button"
                   onClick={() => toggleSection(key)}
-                  className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-base-200 transition-colors"
+                  className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
                   aria-expanded={isOpen}
+                  whileTap={{ scale: 0.985 }}
                 >
-                  <div className="flex flex-col">
-                    <span className="font-semibold text-sm">{title}</span>
-                    <span className="opacity-60 text-xs leading-relaxed">
-                      {description}
+                  <div className="flex items-start gap-3">
+                    <span className="mt-0.5 text-base-content/50">
+                      <Bars3Icon className="size-4" />
                     </span>
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-sm tracking-tight">{section.title}</span>
+                      <span className="opacity-60 text-xs leading-relaxed">
+                        {section.description}
+                      </span>
+                    </div>
                   </div>
-                  <ChevronDownIcon
-                    className={`size-5 transition-transform duration-200 ${
-                      isOpen ? "rotate-180" : ""
-                    }`}
-                  />
-                </button>
-                {isOpen && (
-                  <div className="px-4 pb-4 pt-2">
-                    {content}
-                  </div>
-                )}
-              </section>
+                  <motion.span animate={{ rotate: isOpen ? 180 : 0 }}>
+                    <ChevronDownIcon className="size-5" />
+                  </motion.span>
+                </motion.button>
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div
+                      key="content"
+                      initial="collapsed"
+                      animate="open"
+                      exit="collapsed"
+                      variants={{
+                        open: { height: "auto", opacity: 1 },
+                        collapsed: { height: 0, opacity: 0 },
+                      }}
+                      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-4 pb-4 text-sm leading-relaxed text-base-content/90">
+                        {section.content}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </Reorder.Item>
             );
           })}
-        </div>
+        </Reorder.Group>
       </div>
     </>
   );
