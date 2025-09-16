@@ -1,4 +1,4 @@
-import { ComputerDesktopIcon, InformationCircleIcon } from "@heroicons/react/24/solid";
+import { ComputerDesktopIcon, ChevronDownIcon } from "@heroicons/react/24/solid";
 import { FinanceSection } from "../../components/FinanceSection.jsx";
 import { SportsSection } from "../../components/SportsSection.jsx";
 import { RssSection } from "../../components/RssSection.jsx";
@@ -385,6 +385,66 @@ function FantasyBaseballPanel() {
 
 export default function DisplayTab() {
   const { isAuthenticated } = useAuth();
+  const sectionStorageKey = "scrollr_display_sections";
+  const defaultSections = {
+    sports: true,
+    finance: true,
+    rss: true,
+    fantasy: true,
+  };
+
+  const [openSections, setOpenSections] = useState(() => {
+    if (typeof window === "undefined") return defaultSections;
+    try {
+      const stored = window.localStorage.getItem(sectionStorageKey);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return { ...defaultSections, ...parsed };
+      }
+    } catch {}
+    return defaultSections;
+  });
+
+  const toggleSection = (key) => {
+    setOpenSections((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      try { window.localStorage.setItem(sectionStorageKey, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
+
+  const sections = [
+    {
+      key: "sports",
+      title: "Sports",
+      description: "Manage live game tracking, alerts, and score ribbon settings.",
+      content: <SportsSection />,
+    },
+    {
+      key: "finance",
+      title: "Finance",
+      description: "Control trade stream behaviour and financial ticker options.",
+      content: isAuthenticated ? (
+        <FinanceSection />
+      ) : (
+        <div className="text-sm opacity-70">
+          Sign in to manage finance alerts and ticker preferences.
+        </div>
+      ),
+    },
+    {
+      key: "rss",
+      title: "News (RSS)",
+      description: "Add, remove, and prioritise the feeds that drive breaking news.",
+      content: <RssSection />,
+    },
+    {
+      key: "fantasy",
+      title: "Fantasy Baseball",
+      description: "Connect Yahoo leagues and fine-tune roster presentation.",
+      content: <FantasyBaseballPanel />,
+    },
+  ];
 
   return (
     <>
@@ -397,26 +457,41 @@ export default function DisplayTab() {
         />
         <ComputerDesktopIcon className="size-8" />
       </label>
-      <div className="space-y-6 bg-base-100 p-2 border-base-300 max-h-120 overflow-hidden tab-content">
-        <div className="flex flex-col gap-4 p-2 h-110 overflow-y-auto">
-          {/* Sports Section */}
-          <SportsSection />
-
-          {/* Finance Section */}
-          <FinanceSection />
-
-          {/* RSS Section */}
-          <RssSection />
-
-          <fieldset className="group space-y-2 bg-base-100 p-4 border border-base-300 rounded-box w-full fieldset">
-            <legend className="py-0 text-lg text-center fieldset-legend">
-              <div className="flex-row justify-center items-center gap-1 group-hover:bg-base-200 px-4 py-1 card-border border-base-300 transition-all duration-150 card">
-                <InformationCircleIcon className="size-5 text-base-content/50" />
-                Fantasy Baseball
-              </div>
-            </legend>
-            <FantasyBaseballPanel />
-          </fieldset>
+      <div className="space-y-4 bg-base-100 p-2 border-base-300 max-h-120 overflow-hidden tab-content">
+        <div className="flex flex-col gap-3 p-2 h-110 overflow-y-auto">
+          {sections.map(({ key, title, description, content }) => {
+            const isOpen = openSections[key] ?? true;
+            return (
+              <section
+                key={key}
+                className="bg-base-100 border border-base-300 rounded-box shadow-sm"
+              >
+                <button
+                  type="button"
+                  onClick={() => toggleSection(key)}
+                  className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-base-200 transition-colors"
+                  aria-expanded={isOpen}
+                >
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-sm">{title}</span>
+                    <span className="opacity-60 text-xs leading-relaxed">
+                      {description}
+                    </span>
+                  </div>
+                  <ChevronDownIcon
+                    className={`size-5 transition-transform duration-200 ${
+                      isOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+                {isOpen && (
+                  <div className="px-4 pb-4 pt-2">
+                    {content}
+                  </div>
+                )}
+              </section>
+            );
+          })}
         </div>
       </div>
     </>
