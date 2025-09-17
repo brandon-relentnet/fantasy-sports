@@ -57,17 +57,20 @@ export const AVAILABLE_SYMBOLS = [
   "PM",
   "AXP",
   "BINANCE:BTCUSDT",
-  "ETH",
+  "BINANCE:ETHUSDT",
+  "BINANCE:XRPUSDT",
+  "BINANCE:LTCUSDT",
+  "BINANCE:BCHUSDT",
 ];
 
 // Filter out crypto symbols for stock presets
 export const STOCK_SYMBOLS = AVAILABLE_SYMBOLS.filter(
-  (symbol) => !symbol.includes("BINANCE:") && !["ETH", "BTC"].includes(symbol)
+  (symbol) => !symbol.includes("COINBASE:")
 );
 
 // Crypto symbols available
 export const CRYPTO_SYMBOLS = AVAILABLE_SYMBOLS.filter(
-  (symbol) => symbol.includes("BINANCE:") || ["ETH", "BTC"].includes(symbol)
+  (symbol) => symbol.includes("COINBASE:")
 );
 
 export const STOCK_PRESETS = [
@@ -169,19 +172,25 @@ export const STOCK_PRESETS = [
 
 export const CRYPTO_PRESETS = [
   {
-    key: "top10",
-    label: "Top 10",
-    symbols: ["BINANCE:BTCUSDT", "ETH"], // Only available crypto symbols
+    key: "majors",
+    label: "Major Coins",
+    symbols: [
+      "BINANCE:BTCUSDT",
+      "BINANCE:ETHUSDT",
+      "BINANCE:XRPUSDT",
+      "BINANCE:LTCUSDT",
+      "BINANCE:BCHUSDT",
+    ],
   },
   {
-    key: "defi",
-    label: "DeFi Coins",
-    symbols: ["ETH"], // Only ETH available from your subscriptions
+    key: "btc_only",
+    label: "Bitcoin Spotlight",
+    symbols: ["BINANCE:BTCUSDT"],
   },
   {
-    key: "meme",
-    label: "Meme Coins",
-    symbols: [], // No meme coins in your current subscriptions
+    key: "eth_only",
+    label: "Ethereum Focus",
+    symbols: ["BINANCE:ETHUSDT"],
   },
 ];
 
@@ -241,10 +250,11 @@ export const STOCK_OPTIONS = [
 
 // Updated CRYPTO_OPTIONS to only include what's available
 export const CRYPTO_OPTIONS = [
-  { key: "BINANCE:BTCUSDT", label: "Bitcoin (BTCUSDT)", enabled: true },
-  { key: "ETH", label: "Ethereum", enabled: true },
-  // Note: Only these 2 crypto symbols are available in your subscriptions.json
-  // You can add more by updating your subscriptions.json file
+  { key: "BINANCE:BTCUSDT", label: "Bitcoin (BTC/USDT)", enabled: true },
+  { key: "BINANCE:ETHUSDT", label: "Ethereum (ETH/USDT)", enabled: true },
+  { key: "BINANCE:XRPUSDT", label: "XRP (XRP/USDT)", enabled: true },
+  { key: "BINANCE:LTCUSDT", label: "Litecoin (LTC/USDT)", enabled: true },
+  { key: "BINANCE:BCHUSDT", label: "Bitcoin Cash (BCH/USDT)", enabled: true },
 ];
 
 export const THEMES = [

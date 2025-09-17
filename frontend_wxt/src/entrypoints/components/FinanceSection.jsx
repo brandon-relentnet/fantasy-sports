@@ -2,12 +2,6 @@ import { InformationCircleIcon } from "@heroicons/react/24/solid";
 import { useCallback, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  STOCK_PRESETS,
-  CRYPTO_PRESETS,
-  STOCK_OPTIONS,
-  CRYPTO_OPTIONS,
-} from "@/entrypoints/popup/tabs/data.tsx";
-import {
   toggleFinanceCategory,
   setFinancePreset,
   toggleFinanceSelection,
@@ -15,6 +9,12 @@ import {
   resetFinanceSelections,
   toggleAllFinanceSelections,
 } from "@/entrypoints/store/financeSlice.js";
+import {
+  STOCK_PRESETS,
+  STOCK_OPTIONS,
+  CRYPTO_PRESETS,
+  CRYPTO_OPTIONS,
+} from "@/entrypoints/popup/tabs/data.tsx";
 
 export function FinanceSection() {
   const dispatch = useDispatch();
@@ -60,35 +60,85 @@ export function FinanceSection() {
 
   const renderPresetOptions = useCallback(
     (type) => {
-      const presets = type === "stocks" ? STOCK_PRESETS : CRYPTO_PRESETS;
-      const icon = type === "stocks" ? "📈" : "₿";
-      const label = type === "stocks" ? "Stocks" : "Crypto";
-      const settings = financeState[type] || {
+      if (type === "crypto") {
+        const settings = financeState.crypto || {
+          enabled: false,
+          activePreset: "majors",
+        };
+        const coins = CRYPTO_PRESETS[0]?.symbols || CRYPTO_OPTIONS.map((o) => o.key);
+
+        return (
+          <div className="space-y-2">
+            <label
+              className={`${
+                !settings.enabled ? "text-base-content/50" : "text-base-content"
+              } .label btn btn-ghost justify-between flex items-center whitespace-nowrap`}
+            >
+              ₿  Crypto
+              <input
+                type="checkbox"
+                className="toggle toggle-primary"
+                checked={settings.enabled}
+                onChange={() => {
+                  dispatch(
+                    setFinancePreset({ category: "crypto", preset: "majors" })
+                  );
+                  dispatch(toggleFinanceCategory({ category: "crypto" }));
+                }}
+              />
+            </label>
+
+            {settings.enabled && (
+              <div className="space-y-2 ml-2 p-2 border-l border-base-300/50">
+                <p className="text-xs opacity-60">
+                  Streaming all supported Binance USDT pairs.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {coins.map((symbol) => {
+                    const option = CRYPTO_OPTIONS.find((o) => o.key === symbol);
+                    return (
+                      <span
+                        key={symbol}
+                        className="badge badge-outline badge-sm font-medium"
+                      >
+                        {option?.label || symbol}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      const presets = STOCK_PRESETS;
+      const settings = financeState.stocks || {
         enabled: false,
         activePreset: null,
       };
-      const selectedCount = getSelected(type).length;
+      const selectedCount = getSelected("stocks").length;
 
       return (
         <div>
           <label
             className={`${
               !settings.enabled ? "text-base-content/50" : "text-base-content"
-            } .label btn btn-ghost justify-between flex items-center`}
+            } .label btn btn-ghost justify-between flex items-center whitespace-nowrap`}
           >
-            {icon} {label}
+            📈  Stocks
             <input
               type="checkbox"
               className="toggle toggle-primary"
               checked={settings.enabled}
               onChange={() => {
-                dispatch(toggleFinanceCategory({ category: type }));
+                dispatch(toggleFinanceCategory({ category: "stocks" }));
               }}
             />
           </label>
 
           {settings.enabled && (
-            <div className="space-y-2 p-2 ml-2 border-l border-base-300/50">
+            <div className="space-y-2 ml-2 p-2 border-l border-base-300/50">
               {presets.map((preset) => (
                 <label
                   key={preset.key}
@@ -100,7 +150,7 @@ export function FinanceSection() {
                 >
                   <input
                     type="radio"
-                    name={`${type}-preset`}
+                    name="stocks-preset"
                     className={`radio radio-sm ${
                       settings.activePreset === preset.key
                         ? "radio-primary"
@@ -109,7 +159,7 @@ export function FinanceSection() {
                     checked={settings.activePreset === preset.key}
                     onChange={() => {
                       dispatch(
-                        setFinancePreset({ category: type, preset: preset.key })
+                        setFinancePreset({ category: "stocks", preset: preset.key })
                       );
                     }}
                   />
@@ -125,13 +175,13 @@ export function FinanceSection() {
               >
                 <input
                   type="radio"
-                  name={`${type}-preset`}
+                  name="stocks-preset"
                   className={`radio radio-sm ${
                     settings.activePreset === "custom" ? "radio-primary" : ""
                   }`}
                   checked={settings.activePreset === "custom"}
-                  onChange={() => openModal(type)}
-                  onClick={() => openModal(type)}
+                  onChange={() => openModal("stocks")}
+                  onClick={() => openModal("stocks")}
                 />
                 <span className="label-text">{selectedCount} selected</span>
               </label>
@@ -140,7 +190,7 @@ export function FinanceSection() {
         </div>
       );
     },
-    [financeState, getSelected, openModal, dispatch]
+    [dispatch, financeState, getSelected, openModal]
   );
 
   const renderModal = useCallback(
@@ -148,25 +198,29 @@ export function FinanceSection() {
       const options = type === "stocks" ? STOCK_OPTIONS : CRYPTO_OPTIONS;
       const filtered = getFilteredOptions[type];
       const title = type === "stocks" ? "Stock" : "Crypto";
-      const placeholder =
-        type === "stocks"
-          ? "Search stocks by name or symbol..."
-          : "Search cryptocurrencies by name or symbol...";
+      const placeholder = type === "stocks"
+        ? "Search stocks by name or symbol..."
+        : "Search cryptocurrencies by name or symbol...";
       const settings = financeState[type] || {
         searchTerm: "",
         customSelections: {},
       };
       const selectedCount = getSelected(type).length;
 
+      // Only render modal for stocks
+      if (type === "crypto") {
+        return null;
+      }
+
       return (
         <dialog id={`my_modal_${type}`} className="modal">
-          <div className="modal-box max-w-2xl">
+          <div className="max-w-2xl modal-box">
             <form method="dialog">
-              <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+              <button className="top-2 right-2 absolute btn btn-sm btn-circle btn-ghost">
                 ✕
               </button>
             </form>
-            <h3 className="font-bold text-lg mb-4">{title} Selection</h3>
+            <h3 className="mb-4 font-bold text-lg">{title} Selection</h3>
 
             <div className="flex justify-between items-center mb-4">
               <span className="text-sm text-base-content/70">
@@ -174,7 +228,7 @@ export function FinanceSection() {
               </span>
               <div className="flex gap-2">
                 <button
-                  className="btn btn-sm btn-outline"
+                  className="btn-outline btn btn-sm"
                   onClick={() =>
                     dispatch(toggleAllFinanceSelections({ category: type }))
                   }
@@ -182,7 +236,7 @@ export function FinanceSection() {
                   Toggle All
                 </button>
                 <button
-                  className="btn btn-sm btn-outline"
+                  className="btn-outline btn btn-sm"
                   onClick={() =>
                     dispatch(resetFinanceSelections({ category: type }))
                   }
@@ -195,7 +249,7 @@ export function FinanceSection() {
             <input
               type="text"
               placeholder={placeholder}
-              className="input input-bordered w-full mb-4"
+              className="mb-4 input-bordered w-full input"
               value={settings.searchTerm}
               onChange={(e) =>
                 dispatch(
@@ -207,11 +261,11 @@ export function FinanceSection() {
               }
             />
 
-            <div className="grid grid-cols-1 gap-2 max-h-80 overflow-y-auto">
+            <div className="gap-2 grid grid-cols-1 max-h-80 overflow-y-auto">
               {filtered.map((option) => (
                 <label
                   key={option.symbol}
-                  className="label cursor-pointer justify-start gap-3"
+                  className="justify-start gap-3 cursor-pointer label"
                 >
                   <input
                     type="checkbox"
@@ -236,23 +290,13 @@ export function FinanceSection() {
         </dialog>
       );
     },
-    [financeState, getFilteredOptions, getSelected, dispatch]
+    [dispatch, financeState, getFilteredOptions, getSelected]
   );
 
   return (
     <>
-      <fieldset className="fieldset group bg-base-100 border-base-300 rounded-box w-full border p-4">
-        <legend className="fieldset-legend text-center text-lg py-0">
-          <div className="tooltip tooltip-bottom card card-border border-base-300 flex-row items-center justify-center gap-1 px-4 py-1 group-hover:bg-base-200 transition-all duration-150">
-            <div className="tooltip-content w-60 px-4 py-3">
-              Select your preferred trades to display on Scrollr. You can also
-              add custom selections.
-            </div>
-            <InformationCircleIcon className="size-5 text-base-content/30 group-hover:text-base-content/70 transition-all duration-150" />
-            Finance
-          </div>
-        </legend>
-        <div className="grid grid-cols-2 gap-4 mb-4">
+      <fieldset className="group p-4 border-none rounded-box w-full fieldset">
+        <div className="gap-4 grid grid-cols-2">
           {renderPresetOptions("stocks")}
           {renderPresetOptions("crypto")}
         </div>
@@ -260,7 +304,6 @@ export function FinanceSection() {
 
       {/* Modals */}
       {renderModal("stocks")}
-      {renderModal("crypto")}
     </>
   );
 }

@@ -53,9 +53,6 @@ function getSymbolsForPreset(type, activePreset, customSelections) {
 }
 
 function symbolToFilter(symbol) {
-  if (symbol.startsWith("BINANCE:")) {
-    return `symbol_${symbol.replace("BINANCE:", "")}`;
-  }
   return `symbol_${symbol}`;
 }
 

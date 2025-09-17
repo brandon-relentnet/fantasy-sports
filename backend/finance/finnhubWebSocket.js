@@ -164,18 +164,25 @@ class FinnhubWebSocket {
 
       const promises = batch.map(async (symbol) => {
         try {
-          const previousClose = await this.fetchPreviousClose(symbol);
-          if (previousClose && previousClose > 0) {
-            await tradeService.updatePreviousClose(symbol, previousClose);
+          const quote = await this.fetchQuote(symbol);
+          if (quote?.pc && quote.pc > 0) {
+            await tradeService.updatePreviousClose(symbol, quote.pc);
             console.log(
-              `[FinnhubWS] ✅ ${symbol} previous close updated: $${previousClose}`
+              `[FinnhubWS] ✅ ${symbol} previous close updated: $${quote.pc}`
             );
             successCount++;
           } else {
             console.warn(
-              `[FinnhubWS] ⚠️ Invalid previous close for ${symbol}: ${previousClose}`
+              `[FinnhubWS] ⚠️ Invalid previous close for ${symbol}: ${quote?.pc}`
             );
             errorCount++;
+          }
+
+          if (quote?.c && quote.c > 0) {
+            const priceChange = quote.pc ? quote.c - quote.pc : 0;
+            const percentageChange = quote.pc && quote.pc > 0 ? (priceChange / quote.pc) * 100 : 0;
+            const direction = priceChange >= 0 ? "up" : "down";
+            await tradeService.updateTrade(symbol, quote.c, priceChange, percentageChange, direction);
           }
         } catch (error) {
           console.error(
@@ -273,10 +280,10 @@ class FinnhubWebSocket {
     });
   }
 
-  async fetchPreviousClose(symbol) {
+  async fetchQuote(symbol) {
     try {
       const response = await fetch(
-        `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_API_KEY}`,
+        `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(symbol)}&token=${FINNHUB_API_KEY}`,
         { timeout: 10000 } // 10 second timeout
       );
 
@@ -285,10 +292,10 @@ class FinnhubWebSocket {
       }
 
       const data = await response.json();
-      return data.pc; // previous close
+      return { pc: data.pc, c: data.c };
     } catch (error) {
       console.error(
-        `[FinnhubWS] ❌ fetchPreviousClose error for ${symbol}:`,
+        `[FinnhubWS] ❌ fetchQuote error for ${symbol}:`,
         error.message
       );
       return null;
@@ -317,6 +324,10 @@ class FinnhubWebSocket {
     trades.forEach((trade) => {
       const { s: symbol, p: price, t: timestamp } = trade;
       if (symbol && price && timestamp) {
+        if (!symbol.startsWith('COINBASE:') && !symbol.includes(':') && symbol.length > 5) {
+          console.log(`[FinnhubWS] ⚠️ Unexpected symbol format ${symbol}`);
+        }
+        console.log(`[FinnhubWS] 📥 Trade update ${symbol} $${price}`);
         // Only keep the latest trade for each symbol
         if (
           !this.updateQueue.has(symbol) ||
@@ -436,11 +447,36 @@ class FinnhubWebSocket {
     const { s: symbol, p: price } = trade;
 
     try {
-      const tradeRecord = tradesMap.get(symbol);
+      let tradeRecord = tradesMap.get(symbol);
 
-      if (!tradeRecord || !tradeRecord.previous_close) {
+      if (!tradeRecord) {
+        console.log(`[FinnhubWS] 🆕 Inserting new symbol ${symbol}`);
+        await tradeService.insertSymbol(symbol);
+        tradeRecord = { symbol };
+        tradesMap.set(symbol, tradeRecord);
+      }
+
+      if (!tradeRecord.previous_close || Number(tradeRecord.previous_close) <= 0) {
+        console.log(`[FinnhubWS] 🔄 Fetching quote for ${symbol}`);
+        const quote = await this.fetchQuote(symbol);
+        if (quote?.pc && quote.pc > 0) {
+          await tradeService.updatePreviousClose(symbol, quote.pc);
+          tradeRecord.previous_close = quote.pc;
+        } else if (quote?.c && quote.c > 0) {
+          tradeRecord.previous_close = quote.c;
+          await tradeService.updatePreviousClose(symbol, quote.c);
+        } else {
+          console.warn(
+            `[FinnhubWS] ⚠️ Quote unavailable for ${symbol}, using live price fallback`
+          );
+          tradeRecord.previous_close = tradeRecord.price || tradeRecord.previous_close || price;
+          await tradeService.updatePreviousClose(symbol, tradeRecord.previous_close);
+        }
+      }
+
+      if (!tradeRecord.previous_close) {
         console.warn(
-          `[FinnhubWS] ⚠️ Skipping ${symbol}, no previous_close in DB`
+          `[FinnhubWS] ⚠️ Skipping ${symbol}, unable to determine previous_close`
         );
         return;
       }
@@ -456,7 +492,7 @@ class FinnhubWebSocket {
       }
 
       const priceChange = currentPrice - previousClose;
-      const percentageChange = (priceChange / previousClose) * 100;
+      const percentageChange = previousClose === 0 ? 0 : (priceChange / previousClose) * 100;
       const direction = priceChange >= 0 ? "up" : "down";
 
       await tradeService.updateTrade(
@@ -466,6 +502,9 @@ class FinnhubWebSocket {
         percentageChange,
         direction
       );
+
+      tradeRecord.price = currentPrice;
+      tradeRecord.previous_close = previousClose;
     } catch (error) {
       console.error(
         `[FinnhubWS] ❌ Error processing ${symbol}:`,
