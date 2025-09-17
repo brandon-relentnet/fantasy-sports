@@ -497,14 +497,14 @@ export default function DisplayTab() {
               <Reorder.Item
                 value={key}
                 key={key}
-                className="rounded-2xl bg-base-100/80 shadow-sm backdrop-blur-sm"
-                whileDrag={{ scale: 1.01, boxShadow: "0 12px 24px rgba(15, 23, 42, 0.12)" }}
+                className="card card-compact bg-base-200/40 border border-base-200/60 backdrop-blur"
+                whileDrag={{ scale: 1.02, boxShadow: "0 16px 32px rgba(15,23,42,0.18)" }}
                 dragListener
               >
                 <motion.button
                   type="button"
                   onClick={() => toggleSection(key)}
-                  className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+                  className="card-body flex w-full flex-row items-start justify-between gap-3 px-4 py-3 text-left"
                   aria-expanded={isOpen}
                   whileTap={{ scale: 0.985 }}
                 >
@@ -513,8 +513,10 @@ export default function DisplayTab() {
                       <Bars3Icon className="size-4" />
                     </span>
                     <div className="flex flex-col">
-                      <span className="font-semibold text-sm tracking-tight">{section.title}</span>
-                      <span className="opacity-60 text-xs leading-relaxed">
+                      <span className="font-semibold text-sm tracking-tight leading-tight">
+                        {section.title}
+                      </span>
+                      <span className="opacity-70 text-xs leading-relaxed">
                         {section.description}
                       </span>
                     </div>
@@ -534,10 +536,10 @@ export default function DisplayTab() {
                         open: { height: "auto", opacity: 1 },
                         collapsed: { height: 0, opacity: 0 },
                       }}
-                      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                      transition={{ duration: 0.28, ease: [0.24, 1, 0.32, 1] }}
                       className="overflow-hidden"
                     >
-                      <div className="px-4 pb-4 text-sm leading-relaxed text-base-content/90">
+                      <div className="card-body pt-0 text-sm leading-relaxed text-base-content/90">
                         {section.content}
                       </div>
                     </motion.div>
