@@ -25,7 +25,7 @@ export async function createTables() {
         const createTradesTable = `
             CREATE TABLE IF NOT EXISTS trades (
                 id SERIAL PRIMARY KEY,
-                symbol VARCHAR(10) UNIQUE NOT NULL,
+                symbol VARCHAR(30) UNIQUE NOT NULL,
                 price DECIMAL(10,2),
                 previous_close DECIMAL(10,2),
                 price_change DECIMAL(10,2),
@@ -37,6 +37,23 @@ export async function createTables() {
         `;
         
         await client.query(createTradesTable);
+
+        const widenSymbolColumn = `
+            DO $$
+            BEGIN
+                IF EXISTS (
+                    SELECT 1
+                    FROM information_schema.columns
+                    WHERE table_name = 'trades'
+                      AND column_name = 'symbol'
+                      AND character_maximum_length < 30
+                ) THEN
+                    ALTER TABLE trades ALTER COLUMN symbol TYPE VARCHAR(30);
+                END IF;
+            END$$;
+        `;
+
+        await client.query(widenSymbolColumn);
         console.log('✅ Table "trades" created successfully');
         
         console.log('✅ All finance database tables created successfully');
