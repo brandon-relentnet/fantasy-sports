@@ -1,8 +1,6 @@
-import { InformationCircleIcon } from "@heroicons/react/24/solid";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  setRssEnabled,
   toggleRssSelection,
   setRssSearch,
   resetRssSelections,
@@ -47,168 +45,230 @@ export function RssSection() {
 
   const handleDeleteFeed = useCallback(
     async (feedId) => {
+      const feed = feeds.find((item) => item.id === feedId);
+      if (feed?.isDefault) return;
       await deleteFeed(feedId);
     },
-    [deleteFeed]
+    [deleteFeed, feeds]
   );
+
+  const { defaultFeeds, customFeeds } = useMemo(() => {
+    const defaults = feeds.filter((feed) => feed.isDefault);
+    const customs = feeds.filter((feed) => !feed.isDefault);
+    return { defaultFeeds: defaults, customFeeds: customs };
+  }, [feeds]);
 
   return (
     <>
-      <fieldset className="fieldset group bg-base-100 border-base-300 space-y-2 rounded-box w-full border p-4">
-        <legend className="fieldset-legend text-center text-lg py-0">
-          <div className="tooltip tooltip-bottom card card-border border-base-300 flex-row items-center justify-center gap-1 px-4 py-1 group-hover:bg-base-200 transition-all duration-150">
-            <div className="tooltip-content w-60 px-4 py-3">
-              Add and manage your RSS feeds to stay updated with your favorite
-              websites and blogs.
-            </div>
-            <InformationCircleIcon className="size-5 text-base-content/30 group-hover:text-base-content/70 transition-all duration-150" />
-            RSS{" "}
-            <span className="text-base-content/50 text-sm italic">
-              (Custom Feeds)
-            </span>
-          </div>
-        </legend>
-
-        {!isAuthenticated ? (
-          <div className="text-center py-4">
-            <p className="text-base-content/70 mb-3">
-              Login to manage your RSS feeds
+      <fieldset className="space-y-5 p-4 border-none rounded-box w-full fieldset">
+        <section className="space-y-3">
+          <div>
+            <h4 className="font-semibold text-sm">Curated Headlines</h4>
+            <p className="opacity-70 text-xs">
+              Toggle the sources you want to sample immediately.
             </p>
-            <button
-              className="btn btn-primary btn-sm"
-              onClick={() => {
-                const accountsTab = document.querySelector(
-                  'input[aria-label="Tab 4"]'
-                );
-                if (accountsTab) accountsTab.click();
-              }}
-            >
-              Login to Account
-            </button>
           </div>
-        ) : (
-          <>
-            <div className="space-y-2">
+          <div className="gap-2 grid">
+            {defaultFeeds.map((feed) => (
               <label
-                className={`${
-                  !rssState?.enabled
-                    ? "text-base-content/50"
-                    : "text-base-content"
-                } .label btn btn-ghost justify-between flex items-center`}
+                key={feed.id}
+                className={`flex items-center justify-between rounded-xl border border-base-200/60 bg-base-100/80 px-4 py-3 ${
+                  ''
+                }`}
               >
-                📡 RSS Feeds
+                <div className="flex flex-col">
+                  <span className="font-medium text-sm leading-tight">
+                    {feed.name}
+                  </span>
+                  <span className="opacity-60 text-xs">{feed.category}</span>
+                </div>
                 <input
                   type="checkbox"
-                  className="toggle toggle-primary"
-                  checked={rssState?.enabled}
-                  onChange={() => dispatch(setRssEnabled(!rssState?.enabled))}
+                  className="toggle toggle-primary toggle-sm"
+                  checked={Boolean(rssState?.customSelections?.[feed.id])}
+                  onChange={() => dispatch(toggleRssSelection(feed.id))}
                 />
               </label>
+            ))}
+          </div>
+        </section>
 
-              {rssState?.enabled && (
-                <div className="space-y-2 p-2 ml-2 border-l border-base-300/50">
-                  <form onSubmit={handleRssSubmit} className="space-y-2">
-                    <label className="floating-label">
-                      <span>Feed Name</span>
-                      <input
-                        type="text"
-                        placeholder="My News Feed"
-                        className="input input-sm w-full"
-                        value={rssFormData.name}
-                        onChange={(e) =>
-                          handleRssInputChange("name", e.target.value)
-                        }
-                      />
-                    </label>
-                    <label className="floating-label">
-                      <span>RSS Feed URL</span>
-                      <input
-                        type="url"
-                        placeholder="https://example.com/rss.xml"
-                        className="input input-sm w-full"
-                        value={rssFormData.url}
-                        onChange={(e) =>
-                          handleRssInputChange("url", e.target.value)
-                        }
-                      />
-                    </label>
-                    <label className="floating-label">
-                      <span>Category</span>
-                      <select
-                        className="select select-sm w-full"
-                        value={rssFormData.category}
-                        onChange={(e) =>
-                          handleRssInputChange("category", e.target.value)
-                        }
-                      >
-                        <option value="General">General</option>
-                        <option value="Tech">Tech</option>
-                        <option value="News">News</option>
-                        <option value="Sports">Sports</option>
-                        <option value="Finance">Finance</option>
-                      </select>
-                    </label>
-                    <div className="flex gap-2">
-                      <button
-                        type="submit"
-                        className="btn btn-sm btn-primary flex-1"
-                        disabled={
-                          isLoading || !rssFormData.name || !rssFormData.url
-                        }
-                      >
-                        {isLoading ? "Adding..." : "Add to Collection"}
-                      </button>
+        <section className="space-y-3">
+          <div className="flex justify-between items-center">
+            <div>
+              <h4 className="font-semibold text-sm">Your Custom Feeds</h4>
+              <p className="opacity-70 text-xs">
+                  {isAuthenticated
+                    ? "Connect premium sources or niche alerts."
+                    : "Sign in to add and organise your own RSS sources."}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="btn-outline btn btn-xs"
+                onClick={openRssModal}
+                disabled={feeds.length === 0}
+              >
+                Select (
+                {
+                  Object.values(rssState?.customSelections || {}).filter(
+                    Boolean
+                  ).length
+                }
+                )
+              </button>
+            </div>
+
+            {isAuthenticated ? (
+              <div className="space-y-3 bg-base-100/80 p-4 border border-base-200/60 rounded-2xl">
+                <form onSubmit={handleRssSubmit} className="space-y-2">
+                  <label className="floating-label">
+                    <span>Feed Name</span>
+                    <input
+                      type="text"
+                      placeholder="My News Feed"
+                      className="w-full input input-sm"
+                      value={rssFormData.name}
+                      onChange={(e) =>
+                        handleRssInputChange("name", e.target.value)
+                      }
+                    />
+                  </label>
+                  <label className="floating-label">
+                    <span>RSS Feed URL</span>
+                    <input
+                      type="url"
+                      placeholder="https://example.com/rss.xml"
+                      className="w-full input input-sm"
+                      value={rssFormData.url}
+                      onChange={(e) =>
+                        handleRssInputChange("url", e.target.value)
+                      }
+                    />
+                  </label>
+                  <label className="floating-label">
+                    <span>Category</span>
+                    <select
+                      className="w-full select-sm select"
+                      value={rssFormData.category}
+                      onChange={(e) =>
+                        handleRssInputChange("category", e.target.value)
+                      }
+                    >
+                      <option value="General">General</option>
+                      <option value="Tech">Tech</option>
+                      <option value="News">News</option>
+                      <option value="Sports">Sports</option>
+                      <option value="Finance">Finance</option>
+                    </select>
+                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      type="submit"
+                      className="flex-1 btn btn-sm btn-primary"
+                      disabled={
+                        isLoading || !rssFormData.name || !rssFormData.url
+                      }
+                    >
+                      {isLoading ? "Adding..." : "Add to Collection"}
+                    </button>
+                    {customFeeds.length > 0 && (
                       <button
                         type="button"
-                        className="btn btn-sm btn-outline"
+                        className="btn btn-sm"
                         onClick={openRssModal}
-                        disabled={feeds.length === 0}
                       >
-                        Select (
-                        {
-                          Object.values(
-                            rssState?.customSelections || {}
-                          ).filter(Boolean).length
-                        }
-                        )
+                        Manage
                       </button>
-                    </div>
-                  </form>
+                    )}
+                  </div>
+                </form>
 
-                  {error && (
-                    <div className="alert alert-error alert-sm">
-                      <span className="text-xs">{error}</span>
-                    </div>
-                  )}
+                {error && (
+                  <div className="alert alert-error alert-sm">
+                    <span className="text-xs">{error}</span>
+                  </div>
+                )}
 
-                  {feeds.length > 0 && (
-                    <div className="text-xs text-base-content/50">
-                      {feeds.length} feed{feeds.length !== 1 ? "s" : ""} in
-                      collection
+                {customFeeds.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="opacity-60 text-xs">
+                      {customFeeds.length} custom feed
+                      {customFeeds.length !== 1 ? "s" : ""} added
+                    </p>
+                    <div className="gap-2 grid">
+                      {customFeeds.map((feed) => (
+                        <div
+                          key={feed.id}
+                          className="flex justify-between items-center bg-base-200/70 px-3 py-2 rounded-lg"
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium text-sm">
+                              {feed.name}
+                            </span>
+                            <span className="opacity-60 text-xs">
+                              {feed.category || "General"}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              className="toggle toggle-sm toggle-secondary"
+                              checked={Boolean(
+                                rssState?.customSelections?.[feed.id]
+                              )}
+                              onChange={() => dispatch(toggleRssSelection(feed.id))}
+                            />
+                            <button
+                              className="text-error btn btn-xs btn-ghost"
+                              onClick={() => handleDeleteFeed(feed.id)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </>
-        )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="bg-base-100/70 px-4 py-5 border border-base-200/60 rounded-2xl text-center">
+                <p className="mb-3 text-sm text-base-content/70">
+                  Ready to track niche sources? Sign in to connect your own
+                  feeds and prioritise what matters to you.
+                </p>
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() => {
+                    const accountsTab = document.querySelector(
+                      'input[aria-label="Tab 4"]'
+                    );
+                    if (accountsTab) accountsTab.click();
+                  }}
+                >
+                  Login to Account
+                </button>
+              </div>
+            )}
+          </section>
       </fieldset>
 
       {/* RSS Selection Modal */}
       <dialog id="rss_modal" className="modal">
-        <div className="modal-box max-w-2xl">
+        <div className="max-w-2xl modal-box">
           <form method="dialog">
-            <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+            <button className="top-2 right-2 absolute btn btn-sm btn-circle btn-ghost">
               ✕
             </button>
           </form>
           <h3 className="font-bold text-lg">RSS Feed Selection</h3>
 
-          <div className="form-control w-full my-4">
+          <div className="my-4 w-full form-control">
             <input
               type="text"
               placeholder="Search RSS feeds by name or category..."
-              className="input input-bordered w-full"
+              className="input-bordered w-full input"
               value={rssState?.searchTerm || ""}
               onChange={(e) => dispatch(setRssSearch(e.target.value))}
             />
@@ -216,13 +276,13 @@ export function RssSection() {
 
           <div className="flex gap-2 mb-4">
             <button
-              className="btn btn-sm btn-outline"
+              className="btn-outline btn btn-sm"
               onClick={() => dispatch(toggleAllRssSelections(true))}
             >
               Select All
             </button>
             <button
-              className="btn btn-sm btn-outline"
+              className="btn-outline btn btn-sm"
               onClick={() => dispatch(toggleAllRssSelections(false))}
             >
               Deselect All
@@ -245,7 +305,7 @@ export function RssSection() {
 
           <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
             {feeds.length === 0 ? (
-              <div className="text-center text-base-content/50 py-4">
+              <div className="py-4 text-base-content/50 text-center">
                 No RSS feeds in your collection. Add some feeds first!
               </div>
             ) : (
@@ -267,7 +327,7 @@ export function RssSection() {
                         : "bg-base-200/50"
                     } p-3 rounded-lg flex items-center justify-between`}
                   >
-                    <label className="cursor-pointer flex items-center gap-3 flex-1">
+                    <label className="flex flex-1 items-center gap-3 cursor-pointer">
                       <input
                         type="checkbox"
                         className="checkbox checkbox-sm"
@@ -275,20 +335,22 @@ export function RssSection() {
                         onChange={() => dispatch(toggleRssSelection(feed.id))}
                       />
                       <div className="flex flex-col items-start">
-                        <span className="label-text font-medium text-sm">
+                        <span className="font-medium text-sm label-text">
                           {feed.name}
                         </span>
-                        <span className="label-text text-xs text-base-content/50">
+                        <span className="text-xs text-base-content/50 label-text">
                           {feed.category}
                         </span>
                       </div>
                     </label>
-                    <button
-                      className="btn btn-ghost btn-xs text-error"
-                      onClick={() => handleDeleteFeed(feed.id)}
-                    >
-                      Delete
-                    </button>
+                    {!feed.isDefault && (
+                      <button
+                        className="text-error btn btn-ghost btn-xs"
+                        onClick={() => handleDeleteFeed(feed.id)}
+                      >
+                        Delete
+                      </button>
+                    )}
                   </div>
                 ))
             )}

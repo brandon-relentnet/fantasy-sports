@@ -5,6 +5,7 @@ import {
   addRssFeed,
   removeRssFeed,
   updateRssFeed,
+  DEFAULT_RSS_FEEDS,
 } from "@/entrypoints/store/rssSlice.js";
 import { useAuth } from "./useAuth.tsx";
 import { API_ENDPOINTS } from "@/entrypoints/config/endpoints.js";
@@ -34,6 +35,12 @@ export function useRssFeeds() {
   const dispatch = useDispatch();
   const { isAuthenticated, token } = useAuth();
   const rssState = useSelector((state: any) => state.rss);
+
+  useEffect(() => {
+    if (!rssState?.feeds || rssState.feeds.length === 0) {
+      dispatch(setRssFeeds(DEFAULT_RSS_FEEDS));
+    }
+  }, [dispatch, rssState?.feeds?.length]);
 
   // Load RSS feeds from server
   const loadFeeds = useCallback(async () => {

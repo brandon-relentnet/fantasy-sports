@@ -1,4 +1,12 @@
-import { ComputerDesktopIcon, ChevronDownIcon, Bars3Icon } from "@heroicons/react/24/solid";
+import {
+  ComputerDesktopIcon,
+  ChevronDownIcon,
+  Bars3Icon,
+  TrophyIcon,
+  BanknotesIcon,
+  NewspaperIcon,
+  SparklesIcon,
+} from "@heroicons/react/24/solid";
 import { FinanceSection } from "../../components/FinanceSection.jsx";
 import { SportsSection } from "../../components/SportsSection.jsx";
 import { RssSection } from "../../components/RssSection.jsx";
@@ -14,6 +22,8 @@ import { AnimatePresence, Reorder, motion } from "framer-motion";
 function FantasyBaseballPanel() {
   const dispatch = useDispatch();
   const toggles = useSelector((s) => s.toggles || {});
+  const rssState = useSelector((s) => s.rss || {});
+  const financeState = useSelector((s) => s.finance || {});
   const fantasyEnabled = !!(toggles.YAHOO_FANTASY ?? true);
   // Use Redux as source of truth for enabled
   const fantasyApi = API_ENDPOINTS.fantasy;
@@ -386,6 +396,7 @@ function FantasyBaseballPanel() {
 
 export default function DisplayTab() {
   useAuth();
+  const toggles = useSelector((s) => s.toggles || {});
   const sectionStorageKey = "scrollr_display_sections";
   const orderStorageKey = "scrollr_display_order";
   const defaultSections = {
@@ -394,6 +405,8 @@ export default function DisplayTab() {
     rss: true,
     fantasy: true,
   };
+
+  const fantasyEnabled = !!(toggles.YAHOO_FANTASY ?? true);
 
   const [openSections, setOpenSections] = useState(() => {
     if (typeof window === "undefined") return defaultSections;
@@ -443,21 +456,33 @@ export default function DisplayTab() {
       sports: {
         title: "Sports",
         description: "Manage live game tracking, alerts, and score ribbon settings.",
+        icon: TrophyIcon,
+        accentBg: "bg-success/90",
+        accentText: "text-success-content",
         content: <SportsSection />,
       },
       finance: {
         title: "Finance",
         description: "Control trade stream behaviour and financial ticker options.",
+        icon: BanknotesIcon,
+        accentBg: "bg-warning/90",
+        accentText: "text-warning-content",
         content: <FinanceSection />,
       },
       rss: {
         title: "News (RSS)",
         description: "Add, remove, and prioritise the feeds that drive breaking news.",
+        icon: NewspaperIcon,
+        accentBg: "bg-info/90",
+        accentText: "text-info-content",
         content: <RssSection />,
       },
       fantasy: {
         title: "Fantasy Baseball",
         description: "Connect Yahoo leagues and fine-tune roster presentation.",
+        icon: SparklesIcon,
+        accentBg: "bg-secondary/90",
+        accentText: "text-secondary-content",
         content: <FantasyBaseballPanel />,
       },
     }),
@@ -493,6 +518,8 @@ export default function DisplayTab() {
             const section = sectionMap[key];
             if (!section) return null;
             const isOpen = openSections[key] ?? true;
+            const AccentIcon = section.icon ?? SparklesIcon;
+
             return (
               <Reorder.Item
                 value={key}
@@ -509,8 +536,10 @@ export default function DisplayTab() {
                   whileTap={{ scale: 0.985 }}
                 >
                   <div className="flex items-start gap-3">
-                    <span className="mt-0.5 text-base-content/50">
-                      <Bars3Icon className="size-4" />
+                    <span
+                      className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl shadow-sm ${section.accentBg} ${section.accentText}`}
+                    >
+                      <AccentIcon className="size-5" />
                     </span>
                     <div className="flex flex-col">
                       <span className="font-semibold text-sm tracking-tight leading-tight">

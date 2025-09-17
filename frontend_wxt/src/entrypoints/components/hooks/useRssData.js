@@ -182,22 +182,18 @@ export default function useRssData() {
 
   // Get Redux state - check if user is authenticated by checking if RSS feeds exist
   const rssState = useSelector((state) => state.rss);
-  const isAuthenticated = rssState?.feeds && rssState.feeds.length > 0;
+  const isAuthenticated = true;
 
   // Check if RSS is enabled and we have selected feeds
+  const globalEnabled = true;
+
   const hasActiveRssFeeds = useMemo(() => {
     return (
-      isAuthenticated &&
-      rssState?.enabled &&
+      globalEnabled &&
       rssState?.feeds?.length > 0 &&
       Object.values(rssState?.customSelections || {}).some(Boolean)
     );
-  }, [
-    isAuthenticated,
-    rssState?.enabled,
-    rssState?.feeds?.length,
-    rssState?.customSelections,
-  ]);
+  }, [globalEnabled, rssState?.feeds?.length, rssState?.customSelections]);
 
   // Get selected feeds
   const selectedFeeds = useMemo(() => {
