@@ -7,18 +7,33 @@ import cors from 'cors';
 import { YahooFantasyAPI } from './lib/yahooApi';
 
 // Load environment variables from both the service folder and the backend root.
+const forceLocalEnv = (process.env.FANTASY_YAHOO_FORCE_LOCAL_ENV || '').toLowerCase();
+const nodeEnv = (process.env.NODE_ENV || '').toLowerCase();
+const shouldLoadServiceEnv = forceLocalEnv === 'true' || nodeEnv !== 'production';
+
 const envCandidates = [
-  path.resolve(__dirname, '../.env'),            // backend/fantasy-yahoo/.env
-  path.resolve(__dirname, '../.env.local'),      // backend/fantasy-yahoo/.env.local
-  path.resolve(__dirname, '../../.env'),         // backend/.env (shared backend config)
-  path.resolve(__dirname, '../../.env.local'),   // backend/.env.local (shared overrides)
   path.resolve(process.cwd(), '.env'),
   path.resolve(process.cwd(), '.env.local'),
+  path.resolve(__dirname, '../../.env'),
+  path.resolve(__dirname, '../../.env.local'),
 ];
 
-for (const candidate of envCandidates) {
-  if (fs.existsSync(candidate)) {
-    dotenv.config({ path: candidate, override: false });
+if (shouldLoadServiceEnv) {
+  envCandidates.push(
+    path.resolve(__dirname, '../.env'),
+    path.resolve(__dirname, '../.env.local'),
+  );
+}
+
+const uniqueEnvCandidates = envCandidates.filter((candidate, index) => envCandidates.indexOf(candidate) === index);
+const protectedKeys = new Set(Object.keys(process.env));
+
+for (const candidate of uniqueEnvCandidates) {
+  if (!fs.existsSync(candidate)) continue;
+  const parsed = dotenv.parse(fs.readFileSync(candidate));
+  for (const [key, value] of Object.entries(parsed)) {
+    if (protectedKeys.has(key)) continue; // respect real environment variables
+    process.env[key] = value;
   }
 }
 
