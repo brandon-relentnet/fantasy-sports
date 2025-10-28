@@ -5,7 +5,8 @@ export default defineContentScript({
 
   main(ctx: any) {
     let iframeElement: HTMLIFrameElement | null = null;
-    let isVisible = true;
+    // Default to hidden until background confirms the persisted power state.
+    let isVisible = false;
     let currentLayout = "compact";
     let currentPosition = "bottom";
     let currentOpacity = 1.0;
@@ -33,10 +34,11 @@ export default defineContentScript({
             currentLayout = response.layout;
             currentPosition = response.position || "bottom";
             currentOpacity = response.opacity ?? 1.0;
-            isVisible = response.power;
+            isVisible = response.power ?? false;
           }
         } catch (error) {
           debugLogger.error(DEBUG_CATEGORIES.UI, "Failed to get initial state", error);
+          isVisible = false;
         }
 
         // Apply initial styles
