@@ -1,6 +1,5 @@
 // api.js - Production-grade sports API with enhanced WebSocket management
 import express from "express";
-import cors from "cors";
 import http from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { getAllGames, getGamesByLeague } from "./dbQueries.js";
@@ -320,7 +319,6 @@ function clearCaches() {
  */
 function startApiServer(port = sportsConfig.port || 4000) {
   const app = express();
-  app.use(cors());
   app.use(express.json());
 
   // PRODUCTION FIX: Add rate limiting middleware

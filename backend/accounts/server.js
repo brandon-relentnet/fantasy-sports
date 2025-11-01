@@ -1,5 +1,5 @@
 import express from 'express';
-import cors from 'cors';
+
 import { accountsConfig, validateConfig } from './config.js';
 import { initializeDatabase } from './db.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
@@ -16,7 +16,6 @@ const app = express();
 const PORT = accountsConfig.port;
 
 // Middleware
-app.use(cors());
 app.use(express.json());
 
 // Debug logging - only in development
