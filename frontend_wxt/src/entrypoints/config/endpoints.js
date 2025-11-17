@@ -3,6 +3,8 @@
  * This file contains all connection URLs used throughout the frontend
  */
 
+import { createClient } from "@supabase/supabase-js";
+
 // Environment detection
 const isDevelopment = () => {
   const env = import.meta.env.VITE_ENV;
@@ -12,6 +14,8 @@ const isDevelopment = () => {
 // Base configuration
 const BASE_CONFIG = {
   development: {
+    supabase_url: import.meta.env.VITE_SUPABASE_URL,
+    supabase_key: import.meta.env.VITE_SUPABASE_KEY,
     protocol: "http",
     wsProtocol: "ws",
     host: "localhost",
@@ -23,6 +27,8 @@ const BASE_CONFIG = {
     },
   },
   production: {
+    supabase_url: import.meta.env.VITE_SUPABASE_URL,
+    supabase_key: import.meta.env.VITE_SUPABASE_KEY,
     protocol: "https",
     wsProtocol: "wss",
     host: import.meta.env.VITE_API_URL,
@@ -50,6 +56,23 @@ const buildServiceUrl = (service) => {
     return `${config.protocol}://${config.host}${path}`;
   }
 };
+
+let supabaseClient = null;
+export const getSupabaseClient = () => {
+  if (supabaseClient) {
+    return supabaseClient;
+  }
+
+  const url = config.supabase_url;
+  const key = config.supabase_key;
+
+  if (!url || !key) {
+    throw new Error("Supabase environment variables failed to load, Check .env.")
+  }
+
+  supabaseClient = createClient(url, key);
+  return supabaseClient;
+}
 
 const config = getConfig();
 const fantasyBaseUrl = buildServiceUrl("fantasy");
@@ -195,4 +218,5 @@ export default {
   buildUrl,
   buildWsUrl,
   API_BASE_URL,
+  getSupabaseClient,
 };
