@@ -88,7 +88,7 @@ export function useAuth() {
           },
           body: JSON.stringify({
             settings: settings,
-            version: "2.0.0-beta.1",
+            version: "2.0.2-beta.1",
           }),
         });
 
@@ -331,7 +331,7 @@ export function useAuth() {
             },
             body: JSON.stringify({
               settings: currentSettings,
-              version: "2.0.0-beta.1",
+              version: "2.0.2-beta.1",
             }),
             keepalive: true, // Keep request alive during page unload
           });

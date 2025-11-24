@@ -68,7 +68,7 @@ export async function createTables() {
                 id SERIAL PRIMARY KEY,
                 user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                 settings_data JSONB NOT NULL DEFAULT '{}',
-                version VARCHAR(20) DEFAULT '2.0.0-beta.1',
+                version VARCHAR(20) DEFAULT '2.0.2-beta.1',
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE(user_id)

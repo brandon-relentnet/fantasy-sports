@@ -56,7 +56,7 @@ export default function SettingsTab() {
       setIsExporting(true);
 
       const exportData = {
-        version: "2.0.0-beta.1",
+        version: "2.0.2-beta.1",
         timestamp: new Date().toISOString(),
         settings: { theme, layout, finance, power, toggles, rss },
       };

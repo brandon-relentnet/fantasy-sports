@@ -52,7 +52,7 @@ const buildServiceUrl = (service) => {
 };
 
 const config = getConfig();
-const fantasyBaseUrl = buildServiceUrl("fantasy");
+const fantasyBaseUrl = "https://enanimate.dev/yahoo";
 
 // API Base URLs
 export const API_ENDPOINTS = {
@@ -94,7 +94,7 @@ export const API_ENDPOINTS = {
       }`;
     },
     auth: {
-      start: `${fantasyBaseUrl}/auth/yahoo/start`,
+      start: `${fantasyBaseUrl}/start`,
       callbackTest: `${fantasyBaseUrl}/auth/yahoo/callback/test`,
       config: `${fantasyBaseUrl}/auth/yahoo/config`,
     },

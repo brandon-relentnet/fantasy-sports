@@ -2,7 +2,7 @@
   "name": "scrollr",
   "description": "A modern browser extension for displaying real-time financial, sports, and custom data tickers across your browser tabs",
   "private": false,
-  "version": "2.0.0-beta.1",
+  "version": "2.0.2-beta.1",
   "type": "module",
   "scripts": {
     "dev": "wxt",
