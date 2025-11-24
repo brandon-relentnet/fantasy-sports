@@ -52,7 +52,25 @@ const buildServiceUrl = (service) => {
 };
 
 const config = getConfig();
-const fantasyBaseUrl = "https://enanimate.dev/yahoo";
+const resolveFantasyBaseUrl = () => {
+  const envOverride = (import.meta.env.VITE_FANTASY_BASE_URL || "").trim();
+  if (envOverride) {
+    return envOverride.replace(/\/$/, "");
+  }
+  if (isDevelopment()) {
+    return `${config.protocol}://${config.host}:${config.ports.fantasy}`;
+  }
+  const path =
+    (config.paths && config.paths.fantasy
+      ? config.paths.fantasy
+      : import.meta.env.VITE_FANTASY_PATH) || "";
+  if (path) {
+    const cleanPath = path.replace(/\/$/, "");
+    return `${config.protocol}://${config.host}${cleanPath}`;
+  }
+  return "https://enanimate.dev/yahoo";
+};
+const fantasyBaseUrl = resolveFantasyBaseUrl();
 
 // API Base URLs
 export const API_ENDPOINTS = {
@@ -88,6 +106,7 @@ export const API_ENDPOINTS = {
       const searchParams = new URLSearchParams();
       if (params.date) searchParams.set("date", params.date);
       if (params.debug) searchParams.set("debug", params.debug);
+      if (params.sport) searchParams.set("sport", params.sport);
       const query = searchParams.toString();
       return `${fantasyBaseUrl}/team/${encodeURIComponent(teamKey)}/roster${
         query ? `?${query}` : ""

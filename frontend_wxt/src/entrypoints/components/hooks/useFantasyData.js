@@ -1,15 +1,53 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { API_ENDPOINTS } from '@/entrypoints/config/endpoints.js';
+import {
+  DEFAULT_SPORT,
+  FANTASY_SPORTS,
+  FANTASY_STORAGE_KEYS,
+  getSportParam,
+  isBenchSlot,
+  isInjuredSlot,
+  readScopedPreference,
+  resolveSportKey,
+} from '@/entrypoints/utils/fantasySports.js';
+
+const getStoredSport = () => {
+  try {
+    const saved = localStorage.getItem(FANTASY_STORAGE_KEYS.sport);
+    return saved ? resolveSportKey(saved) : DEFAULT_SPORT;
+  } catch {
+    return DEFAULT_SPORT;
+  }
+};
+
+const getStoredFilter = (sportKey) => {
+  const key = resolveSportKey(sportKey);
+  const cfg = FANTASY_SPORTS[key] || FANTASY_SPORTS[DEFAULT_SPORT];
+  const allowed = (cfg.typeFilters || []).map((opt) => opt.value);
+  const stored = readScopedPreference(FANTASY_STORAGE_KEYS.typeFilter, key, allowed[0] || 'all') || '';
+  if (allowed.length && !allowed.includes(stored)) return allowed[0];
+  return stored || allowed[0] || 'all';
+};
+
+const getStoredSortKey = (sportKey) => {
+  const key = resolveSportKey(sportKey);
+  const cfg = FANTASY_SPORTS[key] || FANTASY_SPORTS[DEFAULT_SPORT];
+  const allowed = new Set((cfg.sortOptions || []).map((opt) => opt.value));
+  const fallback = cfg.defaultSort || cfg.sortOptions?.[0]?.value || '';
+  const stored = readScopedPreference(FANTASY_STORAGE_KEYS.sortKey, key, fallback) || '';
+  if (allowed.size && !allowed.has(stored)) return fallback;
+  return stored;
+};
 
 export default function useFantasyData() {
   const fantasyApi = API_ENDPOINTS.fantasy;
   const [roster, setRoster] = useState([]);
-  const [connectionStatus, setConnectionStatus] = useState('idle'); // idle | loading | ok | error
-  // Filters from localStorage
-  const [filterType, setFilterType] = useState(() => {
-    try { return localStorage.getItem('yahoo_type_filter') || 'all'; } catch { return 'all'; }
-  });
+  const [connectionStatus, setConnectionStatus] = useState('idle');
+
+  const storedSport = getStoredSport();
+  const [selectedSport, setSelectedSport] = useState(storedSport);
+  const [filterType, setFilterType] = useState(() => getStoredFilter(storedSport));
   const [showExtras, setShowExtras] = useState(() => {
     try { return (localStorage.getItem('yahoo_show_extras') ?? 'true') === 'true'; } catch { return true; }
   });
@@ -19,39 +57,50 @@ export default function useFantasyData() {
   const [date, setDate] = useState(() => {
     try { return localStorage.getItem('yahoo_date') || ''; } catch { return ''; }
   });
-  const [sortKey, setSortKey] = useState(() => {
-    try { return localStorage.getItem('yahoo_sort_key') || ''; } catch { return ''; }
-  });
+  const [sortKey, setSortKey] = useState(() => getStoredSortKey(storedSport));
   const [sortDir, setSortDir] = useState(() => {
     try { return localStorage.getItem('yahoo_sort_dir') || 'desc'; } catch { return 'desc'; }
   });
-  // Token/team from localStorage
   const [accessToken, setAccessToken] = useState(() => {
     try { return localStorage.getItem('yahoo_access_token') || ''; } catch { return ''; }
   });
   const [selectedTeam, setSelectedTeam] = useState(() => {
-    try { return localStorage.getItem('yahoo_selected_team') || ''; } catch { return ''; }
+    try { return readScopedPreference(FANTASY_STORAGE_KEYS.team, storedSport, '') || ''; } catch { return ''; }
   });
-  // Keep enable toggle in Redux (works fine)
+
   const enabled = useSelector((state) => (state.toggles?.YAHOO_FANTASY ?? true));
 
-  // Listen for storage changes from popup (token/team + filters)
   useEffect(() => {
     const onStorage = (e) => {
+      if (!e || typeof e.key !== 'string') return;
       if (e.key === 'yahoo_access_token') setAccessToken(e.newValue || '');
-      if (e.key === 'yahoo_selected_team') setSelectedTeam(e.newValue || '');
-      if (e.key === 'yahoo_type_filter') setFilterType(e.newValue || 'all');
       if (e.key === 'yahoo_show_extras') setShowExtras((e.newValue ?? 'true') === 'true');
       if (e.key === 'yahoo_date_mode') setDateMode(e.newValue || 'today');
       if (e.key === 'yahoo_date') setDate(e.newValue || '');
-      if (e.key === 'yahoo_sort_key') setSortKey(e.newValue || '');
-      if (e.key === 'yahoo_sort_dir') setSortDir(e.newValue || 'desc');
+      if (e.key === 'yahoo_sort_dir') setSortDir(e.newValue === 'asc' ? 'asc' : 'desc');
+      if (e.key === FANTASY_STORAGE_KEYS.sport) {
+        setSelectedSport(resolveSportKey(e.newValue || DEFAULT_SPORT));
+        return;
+      }
+      if (e.key.startsWith(FANTASY_STORAGE_KEYS.team)) {
+        setSelectedTeam(readScopedPreference(FANTASY_STORAGE_KEYS.team, selectedSport, '') || '');
+      }
+      if (e.key.startsWith(FANTASY_STORAGE_KEYS.typeFilter)) {
+        setFilterType(getStoredFilter(selectedSport));
+      }
+      if (e.key.startsWith(FANTASY_STORAGE_KEYS.sortKey)) {
+        setSortKey(getStoredSortKey(selectedSport));
+      }
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
-  }, []);
+  }, [selectedSport]);
 
-  // No separate local enabled state — use Redux directly
+  useEffect(() => {
+    setFilterType(getStoredFilter(selectedSport));
+    setSortKey(getStoredSortKey(selectedSport));
+    setSelectedTeam(readScopedPreference(FANTASY_STORAGE_KEYS.team, selectedSport, '') || '');
+  }, [selectedSport]);
 
   useEffect(() => {
     let cancelled = false;
@@ -60,17 +109,21 @@ export default function useFantasyData() {
       setConnectionStatus('loading');
       try {
         const effectiveDate = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : '';
+        const params = {};
+        if (effectiveDate) params.date = effectiveDate;
+        const sportParam = getSportParam(selectedSport);
+        if (sportParam) params.sport = sportParam;
         const res = await fetch(
-          fantasyApi.teamRoster(selectedTeam, effectiveDate ? { date: effectiveDate } : undefined),
+          fantasyApi.teamRoster(selectedTeam, Object.keys(params).length ? params : undefined),
           {
-          headers: { Authorization: `Bearer ${accessToken}` },
+            headers: { Authorization: `Bearer ${accessToken}` },
           }
         );
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         if (!cancelled) {
           const list = Array.isArray(data.roster) ? data.roster : [];
-          setRoster(list);
+          setRoster(list.map((player) => ({ ...player, sport: selectedSport })));
           setConnectionStatus('ok');
         }
       } catch (e) {
@@ -79,49 +132,29 @@ export default function useFantasyData() {
     }
     load();
     return () => { cancelled = true; };
-  }, [fantasyApi, accessToken, selectedTeam, dateMode, date, enabled]);
+  }, [fantasyApi, accessToken, selectedTeam, dateMode, date, enabled, selectedSport]);
 
   const filteredRoster = useMemo(() => {
     if (!enabled) return [];
+    const cfg = FANTASY_SPORTS[selectedSport] || FANTASY_SPORTS[DEFAULT_SPORT];
     const list = Array.isArray(roster) ? roster : [];
-    const filtered = list.filter((p) => {
-      const selPos = (p.selectedPosition || '').toUpperCase();
-      const isBench = selPos === 'BN';
-      const isIL = selPos === 'IL' || selPos === 'DL' || (Array.isArray(p.eligiblePositions) && p.eligiblePositions.includes('IL'));
-      if (!showExtras && (isBench || isIL)) return false;
-      const type = (p.positionType || '').toUpperCase();
-      if (filterType === 'batters' && type === 'P') return false;
-      if (filterType === 'pitchers' && type === 'B') return false;
+    const filtered = list.filter((player) => {
+      const slot = (player.selectedPosition || '').toUpperCase();
+      if (!showExtras && (isBenchSlot(slot) || isInjuredSlot(slot))) return false;
+      if (cfg.filterPredicate && !cfg.filterPredicate(player, filterType)) return false;
       return true;
     });
     if (!sortKey) return filtered;
-    const getVal = (pl) => {
-      switch (sortKey) {
-        case 'HR': return pl.homeRuns ?? 0;
-        case 'RBI': return pl.rbis ?? 0;
-        case 'R': return pl.runs ?? 0;
-        case 'H': return pl.hits ?? 0;
-        case 'SB': return pl.sb ?? 0;
-        case 'AVG': return typeof pl.avg === 'number' ? pl.avg : 0;
-        case 'OPS': return typeof pl.ops === 'number' ? pl.ops : 0;
-        case 'K': return pl.strikeouts ?? 0;
-        case 'W': return pl.wins ?? 0;
-        case 'L': return pl.losses ?? 0;
-        case 'SV': return pl.saves ?? 0;
-        case 'IP': return pl.ip ?? 0;
-        case 'ERA': return typeof pl.era === 'number' ? pl.era : Number.POSITIVE_INFINITY;
-        case 'WHIP': return typeof pl.whip === 'number' ? pl.whip : Number.POSITIVE_INFINITY;
-        default: return 0;
-      }
-    };
+    const getter = cfg.getSortValue || (() => 0);
     const sorted = [...filtered].sort((a, b) => {
-      const va = getVal(a); const vb = getVal(b);
+      const va = getter(a, sortKey);
+      const vb = getter(b, sortKey);
       if (va === vb) return 0;
       if (sortDir === 'asc') return va < vb ? -1 : 1;
       return va > vb ? -1 : 1;
     });
     return sorted;
-  }, [roster, filterType, showExtras, sortKey, sortDir, enabled]);
+  }, [roster, filterType, showExtras, sortKey, sortDir, enabled, selectedSport]);
 
   return {
     roster: filteredRoster,
@@ -131,5 +164,6 @@ export default function useFantasyData() {
     date,
     sortKey,
     sortDir,
+    sport: selectedSport,
   };
 }

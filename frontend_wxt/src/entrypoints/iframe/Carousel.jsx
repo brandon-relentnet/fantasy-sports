@@ -62,6 +62,7 @@ export const Carousel = memo(function Carousel() {
     hasFantasySelection,
     dateMode: fantasyDateMode,
     date: fantasyDate,
+    sport: fantasySport,
   } = useFantasyData();
 
   // Get speed setting from Redux
@@ -131,7 +132,7 @@ export const Carousel = memo(function Carousel() {
       fantasyRoster.slice(0, 10).forEach((player) => {
         items.push(
           <CardWrapper key={`fantasy-${player.key}`} index={index++}>
-            <FantasyCard player={player} dateBadge={badge} />
+            <FantasyCard player={player} dateBadge={badge} sport={fantasySport} />
           </CardWrapper>
         );
       });
