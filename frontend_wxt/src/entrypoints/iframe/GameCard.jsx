@@ -120,11 +120,8 @@ function GameCard({ game }) {
     <PinButton
       isPinned={isPinned}
       onToggle={handlePinClick}
-      className={
-        isCompact
-          ? "absolute group-hover:visible px-2 invisible top-0 right-0 my-1.5 mx-2"
-          : "absolute top-2 right-2 group-hover:visible invisible"
-      }
+      size="size-6"
+      className="absolute top-1 right-1 z-20 opacity-80 hover:opacity-100"
     />
   );
 
