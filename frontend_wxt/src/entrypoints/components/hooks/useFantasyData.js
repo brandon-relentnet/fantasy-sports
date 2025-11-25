@@ -52,7 +52,7 @@ export default function useFantasyData() {
     try { return (localStorage.getItem('yahoo_show_extras') ?? 'true') === 'true'; } catch { return true; }
   });
   const [dateMode, setDateMode] = useState(() => {
-    try { return localStorage.getItem('yahoo_date_mode') || 'date'; } catch { return 'date'; }
+    try { return localStorage.getItem('yahoo_date_mode') || 'today'; } catch { return 'today'; }
   });
   const [date, setDate] = useState(() => {
     try { return localStorage.getItem('yahoo_date') || ''; } catch { return ''; }
@@ -62,7 +62,26 @@ export default function useFantasyData() {
     try { return localStorage.getItem('yahoo_sort_dir') || 'desc'; } catch { return 'desc'; }
   });
   const [accessToken, setAccessToken] = useState(() => {
-    try { return localStorage.getItem('yahoo_access_token') || ''; } catch { return ''; }
+    try {
+      return (
+        localStorage.getItem(FANTASY_STORAGE_KEYS.accessToken) ||
+        localStorage.getItem('yahoo_access_token') ||
+        ''
+      );
+    } catch {
+      return '';
+    }
+  });
+  const [refreshToken, setRefreshToken] = useState(() => {
+    try {
+      return (
+        localStorage.getItem(FANTASY_STORAGE_KEYS.refreshToken) ||
+        localStorage.getItem('yahoo_refresh_token') ||
+        ''
+      );
+    } catch {
+      return '';
+    }
   });
   const [selectedTeam, setSelectedTeam] = useState(() => {
     try { return readScopedPreference(FANTASY_STORAGE_KEYS.team, storedSport, '') || ''; } catch { return ''; }
@@ -73,7 +92,12 @@ export default function useFantasyData() {
   useEffect(() => {
     const onStorage = (e) => {
       if (!e || typeof e.key !== 'string') return;
-      if (e.key === 'yahoo_access_token') setAccessToken(e.newValue || '');
+      if (e.key === 'yahoo_access_token' || e.key === FANTASY_STORAGE_KEYS.accessToken) {
+        setAccessToken(e.newValue || '');
+      }
+      if (e.key === 'yahoo_refresh_token' || e.key === FANTASY_STORAGE_KEYS.refreshToken) {
+        setRefreshToken(e.newValue || '');
+      }
       if (e.key === 'yahoo_show_extras') setShowExtras((e.newValue ?? 'true') === 'true');
       if (e.key === 'yahoo_date_mode') setDateMode(e.newValue || 'today');
       if (e.key === 'yahoo_date') setDate(e.newValue || '');
@@ -105,21 +129,37 @@ export default function useFantasyData() {
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      if (!enabled || !accessToken || !selectedTeam || !fantasyApi) return;
+      if (!enabled || !accessToken || !refreshToken || !selectedTeam || !fantasyApi) return;
       setConnectionStatus('loading');
       try {
-        const effectiveDate = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : '';
+        const effectiveDate =
+          dateMode === 'date' && date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : '';
         const params = {};
         if (effectiveDate) params.date = effectiveDate;
         const sportParam = getSportParam(selectedSport);
         if (sportParam) params.sport = sportParam;
-        const res = await fetch(
-          fantasyApi.teamRoster(selectedTeam, Object.keys(params).length ? params : undefined),
-          {
-            headers: { Authorization: `Bearer ${accessToken}` },
+        const buildUrl = (p) =>
+          fantasyApi.teamRoster(selectedTeam, p && Object.keys(p).length ? p : undefined);
+        const authHeaders = { Authorization: `Bearer ${accessToken}` };
+        const postOptions = {
+          method: 'POST',
+          headers: { ...authHeaders, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh_token: refreshToken }),
+        };
+        let res = await fetch(buildUrl(params), { headers: authHeaders });
+        if (!res.ok && res.status === 401) {
+          res = await fetch(buildUrl(params), postOptions);
+        }
+        if (!res.ok && params.date) {
+          const fallbackParams = sportParam ? { sport: sportParam } : undefined;
+          res = await fetch(buildUrl(fallbackParams), { headers: authHeaders });
+          if (!res.ok && res.status === 401) {
+            res = await fetch(buildUrl(fallbackParams), postOptions);
           }
-        );
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        }
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
         const data = await res.json();
         if (!cancelled) {
           const list = Array.isArray(data.roster) ? data.roster : [];
@@ -132,7 +172,7 @@ export default function useFantasyData() {
     }
     load();
     return () => { cancelled = true; };
-  }, [fantasyApi, accessToken, selectedTeam, dateMode, date, enabled, selectedSport]);
+  }, [fantasyApi, accessToken, refreshToken, selectedTeam, dateMode, date, enabled, selectedSport]);
 
   const filteredRoster = useMemo(() => {
     if (!enabled) return [];
@@ -159,7 +199,7 @@ export default function useFantasyData() {
   return {
     roster: filteredRoster,
     connectionStatus,
-    hasFantasySelection: !!(enabled && accessToken && selectedTeam),
+    hasFantasySelection: !!(enabled && accessToken && refreshToken && selectedTeam),
     dateMode,
     date,
     sortKey,

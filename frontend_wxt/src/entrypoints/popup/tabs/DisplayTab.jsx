@@ -84,6 +84,7 @@ function FantasyYahooPanel() {
   const fantasyEnabled = !!(toggles.YAHOO_FANTASY ?? true);
   const fantasyApi = API_ENDPOINTS.fantasy;
   const [accessToken, setAccessToken] = useState("");
+  const [refreshToken, setRefreshToken] = useState("");
   const [step, setStep] = useState("signin");
   const [leaguesBySport, setLeaguesBySport] = useState({});
   const [teams, setTeams] = useState([]);
@@ -125,7 +126,8 @@ function FantasyYahooPanel() {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('yahoo_access_token');
+      const saved = localStorage.getItem(FANTASY_STORAGE_KEYS.accessToken) || localStorage.getItem('yahoo_access_token');
+      const savedRefresh = localStorage.getItem(FANTASY_STORAGE_KEYS.refreshToken) || localStorage.getItem('yahoo_refresh_token');
       const savedMode = localStorage.getItem('yahoo_date_mode');
       const savedDate = localStorage.getItem('yahoo_date');
       const savedExtras = localStorage.getItem('yahoo_show_extras');
@@ -134,6 +136,7 @@ function FantasyYahooPanel() {
         setAccessToken(saved);
         setStep('league');
       }
+      if (savedRefresh) setRefreshToken(savedRefresh);
       if (savedMode === 'today' || savedMode === 'date') setDateMode(savedMode);
       if (savedDate && /^\d{4}-\d{2}-\d{2}$/.test(savedDate)) setDate(savedDate);
       if (savedExtras != null) setShowExtras(savedExtras === 'true');
@@ -142,12 +145,15 @@ function FantasyYahooPanel() {
   }, []);
 
   useEffect(() => {
-    if (accessToken) {
-      try { localStorage.setItem('yahoo_access_token', accessToken); } catch {}
+    if (accessToken && refreshToken) {
+      try { localStorage.setItem(FANTASY_STORAGE_KEYS.accessToken, accessToken); } catch {}
+      try { localStorage.setItem(FANTASY_STORAGE_KEYS.refreshToken, refreshToken); } catch {}
       setStep('league');
       fetchLeagues();
+    } else if (!accessToken || !refreshToken) {
+      setStep('signin');
     }
-  }, [accessToken]);
+  }, [accessToken, refreshToken]);
 
   const signInWithYahoo = () => {
     if (!fantasyApi) return;
@@ -171,6 +177,8 @@ function FantasyYahooPanel() {
       if (!event || !event.data) return;
       if (event.data.type === "yahoo-auth" && event.data.accessToken) {
         setAccessToken(event.data.accessToken);
+        const rt = event.data.refreshToken || event.data.refresh_token;
+        if (rt) setRefreshToken(rt);
         window.removeEventListener("message", listener);
         if (win) {
           try {
@@ -214,13 +222,21 @@ function FantasyYahooPanel() {
   };
 
   const authHeader = useMemo(() => (accessToken ? { Authorization: `Bearer ${accessToken}` } : {}), [accessToken]);
+  const hasTokens = !!(accessToken && refreshToken);
 
   async function fetchLeagues() {
-    if (!accessToken) return;
+    if (!accessToken || !refreshToken) return;
     setLoading(true);
     try {
       if (!fantasyApi) return;
-      const res = await fetch(fantasyApi.leagues(), { headers: authHeader });
+      let res = await fetch(fantasyApi.leagues(), { headers: authHeader });
+      if (!res.ok && res.status === 401) {
+        res = await fetch(fantasyApi.leagues(), {
+          method: 'POST',
+          headers: { ...authHeader, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh_token: refreshToken }),
+        });
+      }
       const data = await res.json();
       const normalized = normalizeLeaguesResponse(data);
       setLeaguesBySport(normalized);
@@ -264,7 +280,16 @@ function FantasyYahooPanel() {
     setLoading(true);
     try {
       if (!fantasyApi) return;
-      const res = await fetch(fantasyApi.leagueStandings(leagueKey), { headers: authHeader });
+      const sportParam = FANTASY_SPORTS[sportKey]?.sportParam;
+      const resUrl = fantasyApi.leagueStandings(leagueKey, sportParam ? { sport: sportParam } : undefined);
+      let res = await fetch(resUrl, { headers: authHeader });
+      if (!res.ok && res.status === 401) {
+        res = await fetch(resUrl, {
+          method: 'POST',
+          headers: { ...authHeader, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh_token: refreshToken }),
+        });
+      }
       const data = await res.json();
       const t = (data.standings || []).map((x) => ({ team_key: x.team_key, name: x.name }));
       setTeams(t);
@@ -289,7 +314,7 @@ function FantasyYahooPanel() {
   };
 
   async function chooseTeam(teamKey, sportOverride, options = {}) {
-    if (!teamKey) return;
+    if (!teamKey || !refreshToken) return;
     const sportKey = resolveSportKey(sportOverride || selectedSport);
     if (sportKey !== selectedSport) {
       setSelectedSport(sportKey);
@@ -300,8 +325,28 @@ function FantasyYahooPanel() {
     setLoading(true);
     try {
       if (!fantasyApi) return;
-      const rosterUrl = fantasyApi.teamRoster(teamKey, buildRosterParams(sportKey));
-      const res = await fetch(rosterUrl, { headers: authHeader });
+      const params = buildRosterParams(sportKey);
+      const buildUrl = (p) => fantasyApi.teamRoster(teamKey, p && Object.keys(p).length ? p : undefined);
+      let res = await fetch(buildUrl(params), { headers: authHeader });
+      if (!res.ok && res.status === 401) {
+        res = await fetch(buildUrl(params), {
+          method: 'POST',
+          headers: { ...authHeader, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh_token: refreshToken }),
+        });
+      }
+      if (!res.ok && params.date) {
+        // Retry once without a date if the dated request fails
+        res = await fetch(buildUrl({ sport: params.sport }), { headers: authHeader });
+        if (!res.ok && res.status === 401) {
+          res = await fetch(buildUrl({ sport: params.sport }), {
+            method: 'POST',
+            headers: { ...authHeader, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refresh_token: refreshToken }),
+          });
+        }
+      }
+      if (!res.ok) return;
       const data = await res.json();
       const list = Array.isArray(data.roster) ? data.roster : [];
       setRoster(list.map((player) => ({ ...player, sport: sportKey })));
@@ -311,13 +356,33 @@ function FantasyYahooPanel() {
   }
 
   async function refreshRoster(sportOverride) {
-    if (!selectedTeam) return;
+    if (!selectedTeam || !refreshToken) return;
     const sportKey = resolveSportKey(sportOverride || selectedSport);
     setLoading(true);
     try {
       if (!fantasyApi) return;
-      const rosterUrl = fantasyApi.teamRoster(selectedTeam, buildRosterParams(sportKey));
-      const res = await fetch(rosterUrl, { headers: authHeader });
+      const params = buildRosterParams(sportKey);
+      const buildUrl = (p) =>
+        fantasyApi.teamRoster(selectedTeam, p && Object.keys(p).length ? p : undefined);
+      let res = await fetch(buildUrl(params), { headers: authHeader });
+      if (!res.ok && res.status === 401) {
+        res = await fetch(buildUrl(params), {
+          method: 'POST',
+          headers: { ...authHeader, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh_token: refreshToken }),
+        });
+      }
+      if (!res.ok && params.date) {
+        res = await fetch(buildUrl({ sport: params.sport }), { headers: authHeader });
+        if (!res.ok && res.status === 401) {
+          res = await fetch(buildUrl({ sport: params.sport }), {
+            method: 'POST',
+            headers: { ...authHeader, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refresh_token: refreshToken }),
+          });
+        }
+      }
+      if (!res.ok) return;
       const data = await res.json();
       const list = Array.isArray(data.roster) ? data.roster : [];
       setRoster(list.map((player) => ({ ...player, sport: sportKey })));
@@ -387,14 +452,17 @@ function FantasyYahooPanel() {
         {fantasyEnabled && (
           <>
             <div className="flex flex-wrap items-center gap-2 w-full">
-              {!accessToken ? (
+              {!hasTokens ? (
                 <button className="btn btn-primary btn-xs" onClick={signInWithYahoo}>Sign in with Yahoo</button>
               ) : (
                 <button
                   className="group"
                   onClick={() => {
                     try {
+                      localStorage.removeItem(FANTASY_STORAGE_KEYS.accessToken);
+                      localStorage.removeItem(FANTASY_STORAGE_KEYS.refreshToken);
                       localStorage.removeItem('yahoo_access_token');
+                      localStorage.removeItem('yahoo_refresh_token');
                       localStorage.removeItem(FANTASY_STORAGE_KEYS.sport);
                       localStorage.removeItem('yahoo_date_mode');
                       localStorage.removeItem('yahoo_date');
@@ -408,6 +476,7 @@ function FantasyYahooPanel() {
                       });
                     } catch {}
                     setAccessToken('');
+                    setRefreshToken('');
                     setSelectedLeague('');
                     setSelectedTeam('');
                     setLeaguesBySport({});

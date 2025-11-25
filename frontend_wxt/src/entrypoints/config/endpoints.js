@@ -100,8 +100,14 @@ export const API_ENDPOINTS = {
   fantasy: {
     base: fantasyBaseUrl,
     leagues: () => `${fantasyBaseUrl}/leagues`,
-    leagueStandings: (leagueKey) =>
-      `${fantasyBaseUrl}/league/${encodeURIComponent(leagueKey)}/standings`,
+    leagueStandings: (leagueKey, params = {}) => {
+      const searchParams = new URLSearchParams();
+      if (params.sport) searchParams.set("sport", params.sport);
+      const query = searchParams.toString();
+      return `${fantasyBaseUrl}/league/${encodeURIComponent(leagueKey)}/standings${
+        query ? `?${query}` : ""
+      }`;
+    },
     teamRoster: (teamKey, params = {}) => {
       const searchParams = new URLSearchParams();
       if (params.date) searchParams.set("date", params.date);

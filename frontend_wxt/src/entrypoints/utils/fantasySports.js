@@ -39,6 +39,8 @@ export const FANTASY_STORAGE_KEYS = {
   typeFilter: "yahoo_type_filter",
   sortKey: "yahoo_sort_key",
   sortDir: "yahoo_sort_dir",
+  accessToken: "yahoo_access_token",
+  refreshToken: "yahoo_refresh_token",
 };
 
 const defaultSortOptions = [
