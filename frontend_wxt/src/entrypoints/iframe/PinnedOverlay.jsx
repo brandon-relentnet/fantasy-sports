@@ -7,6 +7,7 @@ import {
 import TradeCard from "./TradeCard.jsx";
 import GameCard from "./GameCard.jsx";
 import RssCard from "./RssCard.jsx";
+import FantasyCard from "./FantasyCard.jsx";
 
 const PinnedOverlay = memo(function PinnedOverlay() {
   const pinnedItems = useSelector(selectPinnedItems);
@@ -19,13 +20,20 @@ const PinnedOverlay = memo(function PinnedOverlay() {
   return (
     <div className="flex flex-none items-center gap-2 pr-2">
       {pinnedItems.map((item, index) => {
-        const key = item.type === "finance" ? item.data.symbol : item.data.id;
+        const key =
+          item.data?.symbol ||
+          item.data?.id ||
+          item.data?.key ||
+          `idx-${index}`;
 
         return (
           <div key={`${item.type}-${key}`} className="w-80 flex-shrink-0">
             {item.type === "finance" && <TradeCard trade={item.data} />}
             {item.type === "sports" && <GameCard game={item.data} />}
             {item.type === "rss" && <RssCard rssItem={item.data} />}
+            {item.type === "fantasy" && (
+              <FantasyCard player={item.data} sport={item.data?.sport} />
+            )}
           </div>
         );
       })}
