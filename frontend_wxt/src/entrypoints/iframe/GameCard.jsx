@@ -123,17 +123,17 @@ function GameCard({ game }) {
       className={
         isCompact
           ? "absolute group-hover:visible px-2 invisible top-0 right-0 my-1.5 mx-2"
-          : "group-hover:visible invisible"
+          : "absolute top-2 right-2 group-hover:visible invisible"
       }
     />
   );
 
   if (isCompact) {
-    return (
-      <div
-        className="card bg-base-200 group cursor-pointer border border-base-300 transition duration-150 h-14"
-        onClick={handleCardClick}
-      >
+      return (
+        <div
+          className="card bg-base-200 group cursor-pointer border border-base-300 transition duration-150 h-14 relative"
+          onClick={handleCardClick}
+        >
         <div className="card-body py-2 px-2 flex-row justify-evenly">
           <div className="absolute top-1 left-1 flex items-center justify-evenly gap-2">
             <StatusDisplay />
@@ -181,7 +181,7 @@ function GameCard({ game }) {
   // Comfort Mode
   return (
     <div
-      className="card bg-base-200 group cursor-pointer card-border border-base-300 hover:border-base-content/20 transition-all duration-150 h-40 shadow-sm hover:shadow-md"
+      className="card bg-base-200 group cursor-pointer card-border border-base-300 hover:border-base-content/20 transition-all duration-150 h-40 shadow-sm hover:shadow-md relative"
       onClick={handleCardClick}
     >
       <div className="card-body flex justify-center gap-0 p-3">

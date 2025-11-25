@@ -5,12 +5,22 @@ import {
   LinkIcon,
   InformationCircleIcon,
 } from "@heroicons/react/24/solid";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import {
+  addPinnedItem,
+  removePinnedItem,
+  selectIsItemPinned,
+} from "../store/pinnedSlice.js";
+import PinButton from "./components/PinButton.jsx";
 
 const RssCard = memo(
   ({ rssItem }) => {
+    const dispatch = useDispatch();
     const layout = useSelector((state) => state.layout?.mode || "compact");
     const isCompact = layout === "compact";
+    const isPinned = useSelector((state) =>
+      selectIsItemPinned(state, "rss", rssItem.id)
+    );
 
     // Memoized computations for performance
     const formattedDate = useMemo(() => {
@@ -86,6 +96,14 @@ const RssCard = memo(
       }
     }, [rssItem.link]);
 
+    const handlePinToggle = useCallback(() => {
+      if (isPinned) {
+        dispatch(removePinnedItem({ type: "rss", id: rssItem.id }));
+      } else {
+        dispatch(addPinnedItem({ type: "rss", data: rssItem }));
+      }
+    }, [dispatch, isPinned, rssItem]);
+
     const handleImageError = useCallback((e) => {
       e.target.style.display = "none";
     }, []);
@@ -113,13 +131,16 @@ const RssCard = memo(
     if (isCompact) {
       return (
         <div
-          className="card bg-base-200 group cursor-pointer border border-base-300 transition duration-150 h-14"
+          className="card bg-base-200 group cursor-pointer border border-base-300 transition duration-150 h-14 relative"
           onClick={handleCardClick}
         >
           <div className="card-body py-2 px-2 flex-row justify-evenly items-center">
             {/* Status/Info Icon - Top Left */}
             <div className="absolute top-1 left-1 flex items-center justify-evenly gap-2">
               <StatusDisplay />
+            </div>
+            <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+              <PinButton size="size-6" isPinned={isPinned} onToggle={handlePinToggle} />
             </div>
 
             {/* Article Title */}
@@ -153,7 +174,7 @@ const RssCard = memo(
     // Comfort Mode
     return (
       <div
-        className="card bg-base-200 group cursor-pointer border border-base-300 hover:border-base-content/20 transition-all duration-150 h-40 shadow-sm hover:shadow-md"
+        className="card bg-base-200 group cursor-pointer border border-base-300 hover:border-base-content/20 transition-all duration-150 h-40 shadow-sm hover:shadow-md relative"
         onClick={handleCardClick}
       >
         <div className="card-body flex flex-col gap-2 p-3">
@@ -168,6 +189,9 @@ const RssCard = memo(
             <div className="flex items-center gap-2 flex-shrink-0">
               <LinkIcon className="size-4 text-base-content/50 opacity-0 group-hover:opacity-100 transition-opacity" />
               <CategoryBadge />
+            </div>
+            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <PinButton size="size-6" isPinned={isPinned} onToggle={handlePinToggle} />
             </div>
           </div>
 
