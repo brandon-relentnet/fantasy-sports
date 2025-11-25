@@ -46,7 +46,7 @@ export const DEFAULT_RSS_FEEDS = [
 ];
 
 const DEFAULT_SELECTIONS = DEFAULT_RSS_FEEDS.reduce((acc, feed) => {
-    acc[feed.id] = true;
+    acc[feed.id] = feed.id === "default-npr";
     return acc;
 }, {});
 
