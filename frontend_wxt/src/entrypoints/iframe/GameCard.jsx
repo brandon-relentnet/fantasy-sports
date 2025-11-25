@@ -1,8 +1,4 @@
-import {
-  LockOpenIcon,
-  LockClosedIcon,
-  InformationCircleIcon,
-} from "@heroicons/react/24/solid";
+import { InformationCircleIcon } from "@heroicons/react/24/solid";
 import { memo, useMemo, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
@@ -10,6 +6,7 @@ import {
   removePinnedItem,
   selectIsItemPinned,
 } from "../store/pinnedSlice.js";
+import PinButton from "./components/PinButton.jsx";
 
 // Status map moved outside component to prevent recreation
 const STATUS_MAP = {
@@ -119,19 +116,16 @@ function GameCard({ game }) {
       )}
     </div>
   );
-  const PinButton = () => (
-    <label
-      className={`swap swap-rotate cursor-pointer hover:scale-110 transition-transform ${
+  const PinToggle = () => (
+    <PinButton
+      isPinned={isPinned}
+      onToggle={handlePinClick}
+      className={
         isCompact
-          ? "absolute group-hover:visible px-2 invisible top-0 right-0 my-1.5 mx-2 btn btn-ghost btn-sm"
-          : "group-hover:visible invisible btn btn-ghost btn-sm"
-      }`}
-      onClick={(e) => e.stopPropagation()}
-    >
-      <input type="checkbox" checked={isPinned} onChange={handlePinClick} />
-      <LockOpenIcon className="swap-off size-4" />
-      <LockClosedIcon className="swap-on size-4" />
-    </label>
+          ? "absolute group-hover:visible px-2 invisible top-0 right-0 my-1.5 mx-2"
+          : "group-hover:visible invisible"
+      }
+    />
   );
 
   if (isCompact) {
@@ -178,7 +172,7 @@ function GameCard({ game }) {
               </span>
             </div>
           </div>
-          <PinButton />
+          <PinToggle />
         </div>
       </div>
     );
@@ -195,7 +189,7 @@ function GameCard({ game }) {
         <div className="flex items-center justify-between gap-2">
           <StatusDisplay />
           {game.short_detail}
-          <PinButton />
+          <PinToggle />
         </div>
 
         {/* Teams Container */}

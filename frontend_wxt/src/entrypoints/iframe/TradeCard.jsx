@@ -4,13 +4,13 @@ import {
   ArrowDownIcon,
   ClockIcon,
 } from "@heroicons/react/24/solid";
-import { LockClosedIcon, LockOpenIcon } from "@heroicons/react/24/solid";
 import { useSelector, useDispatch } from "react-redux";
 import {
   addPinnedItem,
   removePinnedItem,
   selectIsItemPinned,
 } from "../store/pinnedSlice.js";
+import PinButton from "./components/PinButton.jsx";
 import debugLogger, { DEBUG_CATEGORIES } from "../utils/debugLogger.js";
 
 const TradeCard = memo(
@@ -104,20 +104,6 @@ const TradeCard = memo(
       </div>
     );
 
-    const PinButton = ({ size = "w-4 h-4" }) => (
-      <button
-        onClick={handlePinToggle}
-        className={`${size} text-base-content/60 hover:text-base-content transition-colors p-1 rounded hover:bg-base-300`}
-        title={isPinned ? "Unpin item" : "Pin item"}
-      >
-        {isPinned ? (
-          <LockClosedIcon className="w-full h-full" />
-        ) : (
-          <LockOpenIcon className="w-full h-full" />
-        )}
-      </button>
-    );
-
     if (isCompact) {
       return (
         <div
@@ -126,7 +112,7 @@ const TradeCard = memo(
         >
           {/* Pin Button - Top Right */}
           <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-            <PinButton size="size-8" />
+            <PinButton size="size-8" isPinned={isPinned} onToggle={handlePinToggle} />
           </div>
 
           <div className="card-body py-2 px-2 flex-row justify-evenly items-center">
@@ -166,7 +152,7 @@ const TradeCard = memo(
       >
         {/* Pin Button - Top Right */}
         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-          <PinButton size="size-8" />
+          <PinButton size="size-8" isPinned={isPinned} onToggle={handlePinToggle} />
         </div>
 
         <div className="card-body flex justify-center gap-0 p-3">

@@ -1,22 +1,21 @@
 import React, { useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { LockClosedIcon, LockOpenIcon, CalendarDaysIcon } from "@heroicons/react/24/solid";
+import { CalendarDaysIcon } from "@heroicons/react/24/solid";
 import { addPinnedItem, removePinnedItem, selectIsItemPinned } from "../store/pinnedSlice.js";
+import PinButton from "./components/PinButton.jsx";
 
 export default function FantasyCard({ player, dateBadge, sport }) {
   const layout = useSelector((state) => state.layout?.mode || 'compact');
   const dispatch = useDispatch();
   const isPinned = useSelector((state) => selectIsItemPinned(state, 'fantasy', player.key));
   const avatarSrc = useMemo(() => player.headshot || player.imageUrl || '', [player.headshot, player.imageUrl]);
-  const PinButton = ({ size = "w-4 h-4" }) => (
-    <button
-      onClick={(e) => { e.stopPropagation(); if (isPinned) { dispatch(removePinnedItem({ type: 'fantasy', id: player.key })); } else { dispatch(addPinnedItem({ type: 'fantasy', data: { ...player, id: player.key } })); } }}
-      className={`${size} text-base-content/60 hover:text-base-content transition-colors p-1 rounded hover:bg-base-300`}
-      title={isPinned ? "Unpin" : "Pin"}
-    >
-      {isPinned ? <LockClosedIcon className="w-full h-full" /> : <LockOpenIcon className="w-full h-full" />}
-    </button>
-  );
+  const onTogglePin = () => {
+    if (isPinned) {
+      dispatch(removePinnedItem({ type: 'fantasy', id: player.key }));
+    } else {
+      dispatch(addPinnedItem({ type: 'fantasy', data: { ...player, id: player.key } }));
+    }
+  };
   const isCompact = useMemo(() => layout === 'compact', [layout]);
   const TeamPos = () => (
     <div className="text-[10px] opacity-60 truncate">
@@ -53,7 +52,9 @@ export default function FantasyCard({ player, dateBadge, sport }) {
             </div>
           </div>
         )}
-        <div className="absolute top-1 right-1 opacity-0 hover:opacity-100 transition-opacity z-10"><PinButton size="size-6" /></div>
+        <div className="absolute top-1 right-1 opacity-0 hover:opacity-100 transition-opacity z-10">
+          <PinButton size="size-6" isPinned={isPinned} onToggle={onTogglePin} />
+        </div>
         <div className="card-body py-2 px-2 flex-row items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <div className="relative w-8 h-8 rounded-full bg-base-300 text-[10px] font-semibold flex items-center justify-center overflow-hidden flex-shrink-0">
@@ -83,7 +84,9 @@ export default function FantasyCard({ player, dateBadge, sport }) {
   // Comfort: avatar + rich header + tidy stats grid
   return (
     <div className="card bg-base-200 border border-base-300 h-40 relative">
-      <div className="absolute top-2 right-2 opacity-0 hover:opacity-100 transition-opacity z-10"><PinButton size="size-6" /></div>
+      <div className="absolute top-2 right-2 opacity-0 hover:opacity-100 transition-opacity z-10">
+        <PinButton size="size-6" isPinned={isPinned} onToggle={onTogglePin} />
+      </div>
       <div className="card-body p-3">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
