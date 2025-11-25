@@ -52,17 +52,13 @@ function GameCard({ game }) {
   }, [game.start_time, game.league]);
 
   // Memoized event handlers
-  const handlePinClick = useCallback(
-    (e) => {
-      e.stopPropagation();
-      if (isPinned) {
-        dispatch(removePinnedItem({ type: "sports", id: game.id }));
-      } else {
-        dispatch(addPinnedItem({ type: "sports", data: game }));
-      }
-    },
-    [isPinned, dispatch, game]
-  );
+  const handlePinClick = useCallback(() => {
+    if (isPinned) {
+      dispatch(removePinnedItem({ type: "sports", id: game.id }));
+    } else {
+      dispatch(addPinnedItem({ type: "sports", data: game }));
+    }
+  }, [isPinned, dispatch, game]);
 
   const handleImageError = useCallback((e) => {
     e.target.style.display = "none";
