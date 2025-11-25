@@ -1,6 +1,5 @@
 // trades-api.js - Production WebSocket optimized version
 import express from "express";
-import cors from "cors";
 import http from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import tradeService from "./tradeService.js";
@@ -382,7 +381,6 @@ async function handleGetAllTrades(ws) {
  */
 async function startTradesApiServer(port = financeConfig.port, options = {}) {
   const app = express();
-  app.use(cors());
   app.use(express.json());
 
   // REST API routes
