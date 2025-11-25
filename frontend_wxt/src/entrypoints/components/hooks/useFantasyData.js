@@ -5,7 +5,7 @@ import {
   DEFAULT_SPORT,
   FANTASY_SPORTS,
   FANTASY_STORAGE_KEYS,
-  getSportParam,
+  getSportParams,
   isBenchSlot,
   isInjuredSlot,
   readScopedPreference,
@@ -134,10 +134,7 @@ export default function useFantasyData() {
       try {
         const effectiveDate =
           dateMode === 'date' && date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : '';
-        const params = {};
-        if (effectiveDate) params.date = effectiveDate;
-        const sportParam = getSportParam(selectedSport);
-        if (sportParam) params.sport = sportParam;
+        const sportParams = getSportParams(selectedSport);
         const buildUrl = (p) =>
           fantasyApi.teamRoster(selectedTeam, p && Object.keys(p).length ? p : undefined);
         const authHeaders = { Authorization: `Bearer ${accessToken}` };
@@ -146,23 +143,45 @@ export default function useFantasyData() {
           headers: { ...authHeaders, 'Content-Type': 'application/json' },
           body: JSON.stringify({ refresh_token: refreshToken }),
         };
-        let res = await fetch(buildUrl(params), { headers: authHeaders });
-        if (!res.ok && res.status === 401) {
-          res = await fetch(buildUrl(params), postOptions);
-        }
-        if (!res.ok && params.date) {
-          const fallbackParams = sportParam ? { sport: sportParam } : undefined;
-          res = await fetch(buildUrl(fallbackParams), { headers: authHeaders });
+        const candidates = [];
+        const seen = new Set();
+        const addCandidate = (p) => {
+          const key = JSON.stringify(p || {});
+          if (seen.has(key)) return;
+          seen.add(key);
+          candidates.push(p);
+        };
+        sportParams.forEach((sp) => {
+          if (effectiveDate) addCandidate({ sport: sp, date: effectiveDate });
+          addCandidate({ sport: sp });
+        });
+        if (effectiveDate) addCandidate({ date: effectiveDate });
+        addCandidate({});
+
+        let successData = null;
+        for (const candidate of candidates) {
+          let res = await fetch(buildUrl(candidate), { headers: authHeaders });
           if (!res.ok && res.status === 401) {
-            res = await fetch(buildUrl(fallbackParams), postOptions);
+            res = await fetch(buildUrl(candidate), postOptions);
+          }
+          if (!res.ok && candidate?.date) {
+            const withoutDate = { ...candidate };
+            delete withoutDate.date;
+            let retry = await fetch(buildUrl(withoutDate), { headers: authHeaders });
+            if (!retry.ok && retry.status === 401) {
+              retry = await fetch(buildUrl(withoutDate), postOptions);
+            }
+            res = retry;
+          }
+          if (res.ok) {
+            successData = await res.json();
+            break;
           }
         }
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
-        }
-        const data = await res.json();
+
+        if (!successData) throw new Error('Roster load failed');
         if (!cancelled) {
-          const list = Array.isArray(data.roster) ? data.roster : [];
+          const list = Array.isArray(successData.roster) ? successData.roster : [];
           setRoster(list.map((player) => ({ ...player, sport: selectedSport })));
           setConnectionStatus('ok');
         }

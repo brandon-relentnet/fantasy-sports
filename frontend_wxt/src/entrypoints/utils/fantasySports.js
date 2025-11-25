@@ -54,7 +54,7 @@ export const FANTASY_SPORTS = {
     label: "Football",
     shortLabel: "NFL",
     emoji: "🏈",
-    sportParam: "football",
+    sportParams: ["nfl", "football"],
     typeFilters: [{ value: "all", label: "All Players" }],
     sortOptions: defaultSortOptions,
     defaultSort: "totalPoints",
@@ -78,7 +78,7 @@ export const FANTASY_SPORTS = {
     label: "Basketball",
     shortLabel: "NBA",
     emoji: "🏀",
-    sportParam: "basketball",
+    sportParams: ["nba", "basketball"],
     typeFilters: [{ value: "all", label: "All Players" }],
     sortOptions: defaultSortOptions,
     defaultSort: "totalPoints",
@@ -102,7 +102,7 @@ export const FANTASY_SPORTS = {
     label: "Hockey",
     shortLabel: "NHL",
     emoji: "🏒",
-    sportParam: "hockey",
+    sportParams: ["nhl", "hockey"],
     typeFilters: [{ value: "all", label: "All Players" }],
     sortOptions: defaultSortOptions,
     defaultSort: "totalPoints",
@@ -129,9 +129,11 @@ export function resolveSportKey(value, fallback = DEFAULT_SPORT) {
   return SPORT_ALIAS_MAP[normalized] || fallback;
 }
 
-export function getSportParam(sportKey) {
+export function getSportParams(sportKey) {
   const key = resolveSportKey(sportKey);
-  return FANTASY_SPORTS[key]?.sportParam;
+  const params = FANTASY_SPORTS[key]?.sportParams;
+  if (!params) return [];
+  return Array.isArray(params) ? params : [params];
 }
 
 export function isBenchSlot(code) {

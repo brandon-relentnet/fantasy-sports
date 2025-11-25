@@ -21,6 +21,7 @@ import {
   DEFAULT_SPORT,
   FANTASY_SPORTS,
   FANTASY_STORAGE_KEYS,
+  getSportParams,
   SUPPORTED_SPORTS_ORDER,
   readScopedPreference,
   removeScopedPreference,
@@ -305,7 +306,7 @@ function FantasyYahooPanel() {
   const buildRosterParams = (sportKey) => {
     const params = {};
     if (dateMode === 'date' && date) params.date = date;
-    const sportParam = FANTASY_SPORTS[sportKey]?.sportParam;
+    const sportParam = getSportParams(sportKey)[0];
     if (sportParam) params.sport = sportParam;
     return params;
   };
@@ -324,28 +325,50 @@ function FantasyYahooPanel() {
       if (!fantasyApi) return;
       const params = buildRosterParams(sportKey);
       const buildUrl = (p) => fantasyApi.teamRoster(teamKey, p && Object.keys(p).length ? p : undefined);
-      let res = await fetch(buildUrl(params), { headers: authHeader });
-      if (!res.ok && res.status === 401) {
-        res = await fetch(buildUrl(params), {
-          method: 'POST',
-          headers: { ...authHeader, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refresh_token: refreshToken }),
-        });
-      }
-      if (!res.ok && params.date) {
-        // Retry once without a date if the dated request fails
-        res = await fetch(buildUrl({ sport: params.sport }), { headers: authHeader });
+      const sportParams = getSportParams(sportKey);
+      const candidates = [];
+      const seen = new Set();
+      const addCandidate = (p) => {
+        const key = JSON.stringify(p || {});
+        if (seen.has(key)) return;
+        seen.add(key);
+        candidates.push(p);
+      };
+      sportParams.forEach((sp) => {
+        if (params.date) addCandidate({ sport: sp, date: params.date });
+        addCandidate({ sport: sp });
+      });
+      if (params.date) addCandidate({ date: params.date });
+      addCandidate({});
+
+      const postOptions = (bodyParams) => ({
+        method: 'POST',
+        headers: { ...authHeader, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken, ...(bodyParams || {}) }),
+      });
+
+      let rosterData = null;
+      for (const candidate of candidates) {
+        let res = await fetch(buildUrl(candidate), { headers: authHeader });
         if (!res.ok && res.status === 401) {
-          res = await fetch(buildUrl({ sport: params.sport }), {
-            method: 'POST',
-            headers: { ...authHeader, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ refresh_token: refreshToken }),
-          });
+          res = await fetch(buildUrl(candidate), postOptions());
+        }
+        if (!res.ok && candidate?.date) {
+          const withoutDate = { ...candidate };
+          delete withoutDate.date;
+          let retry = await fetch(buildUrl(withoutDate), { headers: authHeader });
+          if (!retry.ok && retry.status === 401) {
+            retry = await fetch(buildUrl(withoutDate), postOptions());
+          }
+          res = retry;
+        }
+        if (res.ok) {
+          rosterData = await res.json();
+          break;
         }
       }
-      if (!res.ok) return;
-      const data = await res.json();
-      const list = Array.isArray(data.roster) ? data.roster : [];
+      if (!rosterData) return;
+      const list = Array.isArray(rosterData.roster) ? rosterData.roster : [];
       setRoster(list.map((player) => ({ ...player, sport: sportKey })));
     } finally {
       setLoading(false);
@@ -361,27 +384,50 @@ function FantasyYahooPanel() {
       const params = buildRosterParams(sportKey);
       const buildUrl = (p) =>
         fantasyApi.teamRoster(selectedTeam, p && Object.keys(p).length ? p : undefined);
-      let res = await fetch(buildUrl(params), { headers: authHeader });
-      if (!res.ok && res.status === 401) {
-        res = await fetch(buildUrl(params), {
-          method: 'POST',
-          headers: { ...authHeader, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refresh_token: refreshToken }),
-        });
-      }
-      if (!res.ok && params.date) {
-        res = await fetch(buildUrl({ sport: params.sport }), { headers: authHeader });
+      const sportParams = getSportParams(sportKey);
+      const candidates = [];
+      const seen = new Set();
+      const addCandidate = (p) => {
+        const key = JSON.stringify(p || {});
+        if (seen.has(key)) return;
+        seen.add(key);
+        candidates.push(p);
+      };
+      sportParams.forEach((sp) => {
+        if (params.date) addCandidate({ sport: sp, date: params.date });
+        addCandidate({ sport: sp });
+      });
+      if (params.date) addCandidate({ date: params.date });
+      addCandidate({});
+
+      const postOptions = () => ({
+        method: 'POST',
+        headers: { ...authHeader, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      });
+
+      let rosterData = null;
+      for (const candidate of candidates) {
+        let res = await fetch(buildUrl(candidate), { headers: authHeader });
         if (!res.ok && res.status === 401) {
-          res = await fetch(buildUrl({ sport: params.sport }), {
-            method: 'POST',
-            headers: { ...authHeader, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ refresh_token: refreshToken }),
-          });
+          res = await fetch(buildUrl(candidate), postOptions());
+        }
+        if (!res.ok && candidate?.date) {
+          const withoutDate = { ...candidate };
+          delete withoutDate.date;
+          let retry = await fetch(buildUrl(withoutDate), { headers: authHeader });
+          if (!retry.ok && retry.status === 401) {
+            retry = await fetch(buildUrl(withoutDate), postOptions());
+          }
+          res = retry;
+        }
+        if (res.ok) {
+          rosterData = await res.json();
+          break;
         }
       }
-      if (!res.ok) return;
-      const data = await res.json();
-      const list = Array.isArray(data.roster) ? data.roster : [];
+      if (!rosterData) return;
+      const list = Array.isArray(rosterData.roster) ? rosterData.roster : [];
       setRoster(list.map((player) => ({ ...player, sport: sportKey })));
     } finally {
       setLoading(false);
