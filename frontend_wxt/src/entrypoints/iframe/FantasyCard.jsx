@@ -52,7 +52,7 @@ export default function FantasyCard({ player, dateBadge, sport }) {
             </div>
           </div>
         )}
-        <div className="absolute top-1 right-1 opacity-0 hover:opacity-100 transition-opacity z-10">
+        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
           <PinButton size="size-6" isPinned={isPinned} onToggle={onTogglePin} />
         </div>
         <div className="card-body py-2 px-2 flex-row items-center justify-between gap-2">
@@ -84,7 +84,7 @@ export default function FantasyCard({ player, dateBadge, sport }) {
   // Comfort: avatar + rich header + tidy stats grid
   return (
     <div className="card bg-base-200 border border-base-300 h-40 relative">
-      <div className="absolute top-2 right-2 opacity-0 hover:opacity-100 transition-opacity z-10">
+      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
         <PinButton size="size-6" isPinned={isPinned} onToggle={onTogglePin} />
       </div>
       <div className="card-body p-3">

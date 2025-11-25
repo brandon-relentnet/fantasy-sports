@@ -117,7 +117,11 @@ function GameCard({ game }) {
       isPinned={isPinned}
       onToggle={handlePinClick}
       size="size-6"
-      className="absolute top-1 right-1 z-20 opacity-80 hover:opacity-100"
+      className={
+        isCompact
+          ? "absolute top-1 right-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity"
+          : "absolute top-2 right-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity"
+      }
     />
   );
 
