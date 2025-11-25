@@ -20,16 +20,16 @@ const SPECIAL_TEAMS_POSITIONS = new Set(["K", "P", "PK"]);
 const BENCH_CODES = new Set(["BN", "BE", "BENCH", "RES", "RESERVE"]);
 const INJURED_CODES = new Set(["IL", "DL", "IR", "IR+", "NA"]);
 
-export const SUPPORTED_SPORTS_ORDER = ["mlb", "nfl", "nba"];
-export const DEFAULT_SPORT = "mlb";
+export const SUPPORTED_SPORTS_ORDER = ["nfl", "nba", "nhl"];
+export const DEFAULT_SPORT = "nfl";
 
 const SPORT_ALIAS_MAP = {
-  mlb: "mlb",
-  baseball: "mlb",
   nfl: "nfl",
   football: "nfl",
   nba: "nba",
   basketball: "nba",
+  nhl: "nhl",
+  hockey: "nhl",
 };
 
 export const FANTASY_STORAGE_KEYS = {
@@ -49,93 +49,6 @@ const defaultSortOptions = [
 ];
 
 export const FANTASY_SPORTS = {
-  mlb: {
-    id: "mlb",
-    label: "Baseball",
-    shortLabel: "MLB",
-    emoji: "⚾",
-    sportParam: "baseball",
-    typeFilters: [
-      { value: "all", label: "All" },
-      { value: "batters", label: "Batters" },
-      { value: "pitchers", label: "Pitchers" },
-    ],
-    sortOptions: [
-      { value: "", label: "None" },
-      { value: "HR", label: "Home Runs" },
-      { value: "RBI", label: "RBIs" },
-      { value: "R", label: "Runs" },
-      { value: "H", label: "Hits" },
-      { value: "SB", label: "Stolen Bases" },
-      { value: "AVG", label: "AVG" },
-      { value: "OPS", label: "OPS" },
-      { value: "K", label: "Strikeouts (P)" },
-      { value: "W", label: "Wins" },
-      { value: "L", label: "Losses" },
-      { value: "SV", label: "Saves" },
-      { value: "IP", label: "Innings" },
-      { value: "ERA", label: "ERA" },
-      { value: "WHIP", label: "WHIP" },
-    ],
-    defaultSortByFilter: {
-      batters: "HR",
-      pitchers: "K",
-    },
-    getSortValue(player, key) {
-      switch (key) {
-        case "HR":
-          return player.homeRuns ?? 0;
-        case "RBI":
-          return player.rbis ?? 0;
-        case "R":
-          return player.runs ?? 0;
-        case "H":
-          return player.hits ?? 0;
-        case "SB":
-          return player.sb ?? 0;
-        case "AVG":
-          return typeof player.avg === "number" ? player.avg : 0;
-        case "OPS":
-          return typeof player.ops === "number" ? player.ops : 0;
-        case "K":
-          return player.strikeouts ?? 0;
-        case "W":
-          return player.wins ?? 0;
-        case "L":
-          return player.losses ?? 0;
-        case "SV":
-          return player.saves ?? 0;
-        case "IP":
-          return player.ip ?? 0;
-        case "ERA":
-          return typeof player.era === "number"
-            ? player.era
-            : Number.POSITIVE_INFINITY;
-        case "WHIP":
-          return typeof player.whip === "number"
-            ? player.whip
-            : Number.POSITIVE_INFINITY;
-        case "totalPoints":
-          return (
-            player.totalPoints ??
-            player.playerPoints?.total ??
-            player.weekPoints ??
-            0
-          );
-        default:
-          return 0;
-      }
-    },
-    filterPredicate(player, filterKey) {
-      if (filterKey === "batters") {
-        return (player.positionType || "").toUpperCase() !== "P";
-      }
-      if (filterKey === "pitchers") {
-        return (player.positionType || "").toUpperCase() === "P";
-      }
-      return true;
-    },
-  },
   nfl: {
     id: "nfl",
     label: "Football",
@@ -166,6 +79,30 @@ export const FANTASY_SPORTS = {
     shortLabel: "NBA",
     emoji: "🏀",
     sportParam: "basketball",
+    typeFilters: [{ value: "all", label: "All Players" }],
+    sortOptions: defaultSortOptions,
+    defaultSort: "totalPoints",
+    getSortValue(player, key) {
+      if (key === "totalPoints") {
+        return (
+          player.totalPoints ??
+          player.playerPoints?.total ??
+          player.weekPoints ??
+          0
+        );
+      }
+      return 0;
+    },
+    filterPredicate() {
+      return true;
+    },
+  },
+  nhl: {
+    id: "nhl",
+    label: "Hockey",
+    shortLabel: "NHL",
+    emoji: "🏒",
+    sportParam: "hockey",
     typeFilters: [{ value: "all", label: "All Players" }],
     sortOptions: defaultSortOptions,
     defaultSort: "totalPoints",

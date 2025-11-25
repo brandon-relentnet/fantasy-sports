@@ -29,9 +29,6 @@ import {
 } from "@/entrypoints/utils/fantasySports.js";
  
 
-const BATTER_SORT_KEYS = new Set(["HR", "RBI", "R", "H", "SB", "AVG", "OPS"]);
-const PITCHER_SORT_KEYS = new Set(["K", "W", "L", "SV", "IP", "ERA", "WHIP"]);
-
 const getInitialSportKey = () => {
   if (typeof window === "undefined") return DEFAULT_SPORT;
   try {
@@ -67,7 +64,7 @@ const normalizeLeaguesResponse = (payload) => {
     result[sportKey].push(league);
   };
   if (Array.isArray(source)) {
-    source.forEach((league) => addLeague(league, "mlb"));
+    source.forEach((league) => addLeague(league, "nfl"));
   } else if (source && typeof source === "object") {
     Object.entries(source).forEach(([key, value]) => {
       if (Array.isArray(value)) {
@@ -392,14 +389,7 @@ function FantasyYahooPanel() {
   }
 
   useEffect(() => {
-    if (selectedSport !== 'mlb') return;
-    if (typeFilter === 'batters' && (PITCHER_SORT_KEYS.has(sortKey) || !sortKey)) {
-      setSortKey('HR');
-      writeScopedPreference(FANTASY_STORAGE_KEYS.sortKey, 'mlb', 'HR');
-    } else if (typeFilter === 'pitchers' && (BATTER_SORT_KEYS.has(sortKey) || !sortKey)) {
-      setSortKey('K');
-      writeScopedPreference(FANTASY_STORAGE_KEYS.sortKey, 'mlb', 'K');
-    }
+    // No sport-specific sort coercion needed with current sports set
   }, [typeFilter, sortKey, selectedSport]);
 
   const handleSportSwitch = (sportKey) => {

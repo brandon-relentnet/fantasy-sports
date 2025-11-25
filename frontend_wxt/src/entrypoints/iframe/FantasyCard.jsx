@@ -8,7 +8,6 @@ export default function FantasyCard({ player, dateBadge, sport }) {
   const dispatch = useDispatch();
   const isPinned = useSelector((state) => selectIsItemPinned(state, 'fantasy', player.key));
   const avatarSrc = useMemo(() => player.headshot || player.imageUrl || '', [player.headshot, player.imageUrl]);
-  const resolvedSport = (sport || player.sport || 'mlb').toLowerCase();
   const PinButton = ({ size = "w-4 h-4" }) => (
     <button
       onClick={(e) => { e.stopPropagation(); if (isPinned) { dispatch(removePinnedItem({ type: 'fantasy', id: player.key })); } else { dispatch(addPinnedItem({ type: 'fantasy', data: { ...player, id: player.key } })); } }}
@@ -19,7 +18,6 @@ export default function FantasyCard({ player, dateBadge, sport }) {
     </button>
   );
   const isCompact = useMemo(() => layout === 'compact', [layout]);
-  const isPitcher = resolvedSport === 'mlb' && (player.positionType || '').toUpperCase() === 'P';
   const TeamPos = () => (
     <div className="text-[10px] opacity-60 truncate">
       {(player.teamAbbr || player.teamFullName || '')}
@@ -69,35 +67,14 @@ export default function FantasyCard({ player, dateBadge, sport }) {
               <TeamPos />
             </div>
           </div>
-          {resolvedSport === 'mlb' ? (
-            <div className="flex items-center gap-2 text-[11px] whitespace-nowrap">
-              {dateBadge && (
-                <span className="badge badge-ghost badge-xs">{dateBadge}</span>
-              )}
-              {!isPitcher ? (
-                <>
-                  <span>HR {player.homeRuns ?? 0}</span>
-                  <span>RBI {player.rbis ?? 0}</span>
-                  <span>AVG {typeof player.avg === 'number' ? player.avg.toFixed(3) : '0.000'}</span>
-                </>
-              ) : (
-                <>
-                  <span>K {player.strikeouts ?? 0}</span>
-                  {typeof player.era === 'number' && (<span>ERA {player.era.toFixed(2)}</span>)}
-                  {typeof player.whip === 'number' && (<span>WHIP {player.whip.toFixed(2)}</span>)}
-                </>
-              )}
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 text-[11px] whitespace-nowrap">
-              {dateBadge && (
-                <span className="badge badge-ghost badge-xs">{dateBadge}</span>
-              )}
-              {generalStats.slice(0, 3).map((stat) => (
-                <span key={stat.label}>{stat.label} {stat.value}</span>
-              ))}
-            </div>
-          )}
+          <div className="flex items-center gap-2 text-[11px] whitespace-nowrap">
+            {dateBadge && (
+              <span className="badge badge-ghost badge-xs">{dateBadge}</span>
+            )}
+            {generalStats.slice(0, 3).map((stat) => (
+              <span key={stat.label}>{stat.label} {stat.value}</span>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -133,35 +110,11 @@ export default function FantasyCard({ player, dateBadge, sport }) {
             )}
           </div>
         </div>
-        {resolvedSport === 'mlb' ? (
-          <div className="grid grid-cols-6 gap-2 mt-3 text-xs">
-            {!isPitcher ? (
-              <>
-                <Stat label="R" val={player.runs ?? 0} />
-                <Stat label="H" val={player.hits ?? 0} />
-                <Stat label="RBI" val={player.rbis ?? 0} />
-                <Stat label="HR" val={player.homeRuns ?? 0} />
-                <Stat label="AVG" val={typeof player.avg === 'number' ? player.avg.toFixed(3) : '0.000'} />
-                <Stat label="OPS" val={typeof player.ops === 'number' ? player.ops.toFixed(3) : '0.000'} />
-              </>
-            ) : (
-              <>
-                <Stat label="IP" val={player.ip ?? 0} />
-                <Stat label="W" val={player.wins ?? 0} />
-                <Stat label="SV" val={player.saves ?? 0} />
-                <Stat label="K" val={player.strikeouts ?? 0} />
-                {typeof player.era === 'number' && (<Stat label="ERA" val={player.era.toFixed(2)} />)}
-                {typeof player.whip === 'number' && (<Stat label="WHIP" val={player.whip.toFixed(2)} />)}
-              </>
-            )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-3 gap-2 mt-3 text-xs">
-            {generalStats.slice(0, 3).map((stat) => (
-              <Stat key={stat.label} label={stat.label} val={stat.value} />
-            ))}
-          </div>
-        )}
+        <div className="grid grid-cols-3 gap-2 mt-3 text-xs">
+          {generalStats.slice(0, 3).map((stat) => (
+            <Stat key={stat.label} label={stat.label} val={stat.value} />
+          ))}
+        </div>
       </div>
     </div>
   );
