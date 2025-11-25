@@ -75,8 +75,7 @@ const TradeCard = memo(
     }, [trade.previous_close]);
 
     // Handle pin/unpin
-    const handlePinToggle = (e) => {
-      e.stopPropagation();
+    const handlePinToggle = () => {
       if (isPinned) {
         dispatch(removePinnedItem({ type: "finance", id: trade.symbol }));
       } else {
