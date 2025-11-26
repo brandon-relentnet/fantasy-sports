@@ -12,7 +12,7 @@ const togglesSlice = createSlice({
         MLB: false,
         NHL: false,
         // Fantasy brand toggles
-        YAHOO_FANTASY: true,
+        YAHOO_FANTASY: false,
     },
     reducers: {
         setToggles: (state, action) => action.payload,

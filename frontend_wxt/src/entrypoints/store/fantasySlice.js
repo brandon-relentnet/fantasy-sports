@@ -3,7 +3,7 @@ import { createSlice } from '@reduxjs/toolkit';
 const fantasySlice = createSlice({
   name: 'fantasy',
   initialState: {
-    enabled: true,
+    enabled: false,
     sortKey: '',
     sortDir: 'desc',
     dateMode: 'today',

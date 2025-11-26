@@ -12,6 +12,9 @@ const CRYPTO_SYMBOL_MIGRATIONS = {
 const createDefaultSelections = (options) =>
     options.reduce((acc, opt) => ({ ...acc, [opt.key]: opt.enabled }), {});
 
+const createAllTrueSelections = (options) =>
+    options.reduce((acc, opt) => ({ ...acc, [opt.key]: true }), {});
+
 const normalizeCryptoSelections = (selections = {}) => {
     const defaults = createDefaultSelections(CRYPTO_OPTIONS);
     const normalized = { ...defaults };
@@ -33,11 +36,12 @@ const normalizeFinanceState = (state) => {
     const next = { ...state };
 
     if (!next.stocks) next.stocks = {};
+    const stockDefaults = createAllTrueSelections(STOCK_OPTIONS);
     next.stocks = {
-        enabled: next.stocks.enabled ?? false,
+        enabled: next.stocks.enabled ?? true,
         activePreset: next.stocks.activePreset ?? null,
         customSelections: {
-            ...createDefaultSelections(STOCK_OPTIONS),
+            ...stockDefaults,
             ...(next.stocks.customSelections || {}),
         },
         searchTerm: next.stocks.searchTerm ?? '',
@@ -45,10 +49,10 @@ const normalizeFinanceState = (state) => {
 
     if (!next.crypto) next.crypto = {};
     next.crypto = {
-        enabled: next.crypto.enabled ?? true,
+        enabled: next.crypto.enabled ?? false,
         activePreset: next.crypto.activePreset && next.crypto.activePreset !== 'custom'
             ? next.crypto.activePreset
-            : 'majors',
+            : null,
         customSelections: normalizeCryptoSelections(next.crypto.customSelections),
         searchTerm: next.crypto.searchTerm ?? '',
     };
@@ -58,14 +62,14 @@ const normalizeFinanceState = (state) => {
 
 const initialState = normalizeFinanceState({
     stocks: {
-        enabled: false,
+        enabled: true,
         activePreset: null,
-        customSelections: {},
+        customSelections: createAllTrueSelections(STOCK_OPTIONS),
         searchTerm: ''
     },
     crypto: {
-        enabled: true,
-        activePreset: 'majors',
+        enabled: false,
+        activePreset: null,
         customSelections: {},
         searchTerm: ''
     }

@@ -37,7 +37,10 @@ export function useRssFeeds() {
   const rssState = useSelector((state: any) => state.rss);
 
   useEffect(() => {
-    if (!rssState?.feeds || rssState.feeds.length === 0) {
+    const defaultIds = new Set(DEFAULT_RSS_FEEDS.map((f) => f.id));
+    const feedIds = new Set((rssState?.feeds || []).map((f: any) => f.id));
+    const missingDefault = DEFAULT_RSS_FEEDS.some((f) => !feedIds.has(f.id));
+    if (!rssState?.feeds || rssState.feeds.length === 0 || missingDefault) {
       dispatch(setRssFeeds(DEFAULT_RSS_FEEDS));
     }
   }, [dispatch, rssState?.feeds?.length]);

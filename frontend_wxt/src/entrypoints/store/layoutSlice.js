@@ -3,7 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 const layoutSlice = createSlice({
     name: "layout",
     initialState: {
-        mode: 'compact',
+        mode: 'comfort',
         speed: 'classic', // slow, classic, fast
         position: 'bottom', // top, bottom
         opacity: 1.0, // 0.0 to 1.0
